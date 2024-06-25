@@ -13,8 +13,9 @@ Created on Tue Jun 25 09:57:05 2024
 
 # Libraries
 import gspread
-from oauth2client.service_account import ServiceAccountCredentials
 import pandas as pd
+import selenium
+from oauth2client.service_account import ServiceAccountCredentials
 from concurrent.futures import ThreadPoolExecutor
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
