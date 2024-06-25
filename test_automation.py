@@ -182,5 +182,5 @@ append_to_sheet(client, market_data_url, 'test_automation',holding_information)
 # Store data 
 holding_information.to_parquet('data/test' + '.parquet',  engine='pyarrow')
 
-###
+
 
