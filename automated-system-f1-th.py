@@ -101,7 +101,7 @@ def scrape_from_tfex(symbol):
         driver.get(url)
         
         # Use WebDriverWait to wait for the table to be loaded
-        wait = WebDriverWait(driver, 10)  # Timeout after 10 seconds
+        wait = WebDriverWait(driver, 60)  # Timeout after 10 seconds
         table_element = wait.until(EC.visibility_of_element_located((By.XPATH, xpath)))
 
         # Extract the rows using a more specific XPath to directly access the cells
