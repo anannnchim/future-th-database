@@ -25,6 +25,8 @@ from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 from gspread_dataframe import set_with_dataframe
 import os
+from google.oauth2.service_account import Credentials
+import json
 
 # functions
 def scrape_from_tfex(symbol):
@@ -130,13 +132,14 @@ market_data_url = 'https://docs.google.com/spreadsheets/d/19Rj7iW5xWOe6ZJJRsO9Vz
 
 ##### 2. Set up onece ------------------------------------
 
-# Authentication using the credentials file created in the workflow
-creds = ServiceAccountCredentials.from_json_keyfile_name(
-    os.environ['GOOGLE_APPLICATION_CREDENTIALS'], 
-    ['https://spreadsheets.google.com/feeds','https://www.googleapis.com/auth/drive']
+# Parse the credentials from the environment variable
+service_account_info = json.loads(os.environ['GOOGLE_APPLICATION_CREDENTIALS'])
+creds = Credentials.from_service_account_info(
+    service_account_info,
+    scopes=['https://spreadsheets.google.com/feeds','https://www.googleapis.com/auth/drive']
 )
-client = gspread.authorize(creds)
 
+client = gspread.authorize(creds)
 
 # Authentication (manually)
 #creds = ServiceAccountCredentials.from_json_keyfile_name(json_keyfile_path, scope)
