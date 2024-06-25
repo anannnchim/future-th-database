@@ -31,7 +31,7 @@ jobs:
         credentials_json: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}  # Ensure this matches the secret name
 
     - name: Run Python script
-      run: python test_automation.py  # Ensure script name matches your script's filename
+      run: python test_googlesheet_credentials.py  # Ensure script name matches your script's filename
 
     - name: Commit files
       run: |
