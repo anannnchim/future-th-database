@@ -27,6 +27,7 @@ from gspread_dataframe import set_with_dataframe
 import os
 from google.oauth2.service_account import Credentials
 import json
+from google.oauth2 import service_account
 
 # functions
 def scrape_from_tfex(symbol):
@@ -123,8 +124,6 @@ def prep_df(raw_df):
 
 # global variables
 scope = ['https://spreadsheets.google.com/feeds','https://www.googleapis.com/auth/drive']
-
-# Store as GOOGLE_CREDENTIALS
 # json_keyfile_path = '/Users/nanthawat/Desktop/key/google/system-f1-th/automated-system-f1-th-key.json' (manually)
 market_input_url = 'https://docs.google.com/spreadsheets/d/17SMA52gIOkjFan-0au_YJEAxoWIzoNA84qlmgoTsZ-s/edit?gid=1037340594#gid=1037340594'
 market_data_url = 'https://docs.google.com/spreadsheets/d/19Rj7iW5xWOe6ZJJRsO9VzsZXyLfFu1S_vtClEE_3DEw/edit?gid=748449431#gid=748449431'
@@ -132,34 +131,17 @@ market_data_url = 'https://docs.google.com/spreadsheets/d/19Rj7iW5xWOe6ZJJRsO9Vz
 
 ##### 2. Set up onece ------------------------------------
 
-# METHOD manually 1
-#path = '/Users/nanthawat/Desktop/key/google/system-f1-th/automated-system-f1-th-key.json'
-#creds = ServiceAccountCredentials.from_json_keyfile_name(path, scope)
+# METHOD 1: Authentication (manually)
+#creds = ServiceAccountCredentials.from_json_keyfile_name(json_keyfile_path, scope)
 #client = gspread.authorize(creds)
-# Parse the credentials from the environment variable
-# service_account_info = json.loads(os.environ['GOOGLE_APPLICATION_CREDENTIALS']) 
-#json_keyfile_path = json.loads(os.getenv("GOOGLE_APPLICATION_CREDENTIALS"))
-#json_keyfile_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
 
-
-# Method 2 
+# Method 2: Authentication (Github action)
 from google.oauth2 import service_account
 SERVICE_ACCOUNT_FILE = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
-# Load the credentials from the service account file
-creds = service_account.Credentials.from_service_account_file(
-    SERVICE_ACCOUNT_FILE,
-    scopes=scope)
-
+creds = service_account.Credentials.from_service_account_file( SERVICE_ACCOUNT_FILE, scope)
 client = gspread.authorize(creds)
 
 
-
-
-# ------------------------------
-
-# METHOD 3 : Authentication (manually)
-#creds = ServiceAccountCredentials.from_json_keyfile_name(json_keyfile_path, scope)
-#client = gspread.authorize(creds)
 
 # Get sheet from url
 market_input_sheet = client.open_by_url(market_input_url)
