@@ -229,7 +229,7 @@ for symbol in holding_information['current_symbol']:
         
         # Store data 
         prev_backadj_df['date'] = prev_backadj_df['date'].dt.strftime('%Y-%m-%d')
-        prev_backadj_df.to_parquet(ticker + '.parquet',  engine='pyarrow')
+        # prev_backadj_df.to_parquet(ticker + '.parquet',  engine='pyarrow')
     
     else:
         
@@ -268,7 +268,7 @@ for symbol in holding_information['current_symbol']:
         print("3 - Finish: Update googlesheet")
         
         # Save data
-        prev_backadj_df.to_parquet(ticker + '.parquet', engine='pyarrow')
+        # prev_backadj_df.to_parquet(ticker + '.parquet', engine='pyarrow')
 
     print("4 - All done.")     
         
