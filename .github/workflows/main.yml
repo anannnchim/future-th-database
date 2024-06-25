@@ -28,16 +28,16 @@ jobs:
     - name: Authenticate to Google Cloud
       uses: google-github-actions/auth@v2
       with:
-        credentials_json: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}  # Ensure this matches the secret name 
+        credentials_json: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }} 
 
     - name: Run Python script
-      run: python test_google_credentials.py  # Ensure script name matches your script's filename test
+      run: python automated-system-f1-th.py 
 
     - name: Commit files
       run: |
         git config --local user.name actions-user
         git config --local user.email "actions@github.com"
-        git add raw_df.parquet  # Add the file located outside the data directory
+        git add *.parquet  # Add all .parquet files in the root directory
         git commit -m "GH ACTION Updated Data $(date)"
         git push
       env:
