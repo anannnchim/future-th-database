@@ -37,7 +37,7 @@ jobs:
       run: |
         git config --local user.name actions-user
         git config --local user.email "actions@github.com"
-        git add *.parquet  # Add all .parquet files in the root directory
+        #git add *.parquet  # Add all .parquet files in the root directory test
         # Check if there are changes. If there are, commit them.
         if git diff --staged --quiet; then
           echo "No changes to commit."
