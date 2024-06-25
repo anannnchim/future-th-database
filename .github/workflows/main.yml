@@ -1,7 +1,7 @@
 # Hourly scraping
 name: sitemap_scraping
 
-# Controls when the action will run.
+# STEP: Clone / grant access for git action
 on:
   push:
     branches: 
