@@ -133,7 +133,9 @@ market_data_url = 'https://docs.google.com/spreadsheets/d/19Rj7iW5xWOe6ZJJRsO9Vz
 ##### 2. Set up onece ------------------------------------
 
 # Parse the credentials from the environment variable
-json_keyfile_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+# service_account_info = json.loads(os.environ['GOOGLE_APPLICATION_CREDENTIALS'])
+
+json_keyfile_path = json.loads(os.getenv("GOOGLE_APPLICATION_CREDENTIALS"))
 
 # Authentication (manually)
 creds = ServiceAccountCredentials.from_json_keyfile_name(json_keyfile_path, scope)
