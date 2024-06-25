@@ -136,9 +136,9 @@ market_data_url = 'https://docs.google.com/spreadsheets/d/19Rj7iW5xWOe6ZJJRsO9Vz
 #client = gspread.authorize(creds)
 
 # Method 2: Authentication (Github action)
-from google.oauth2 import service_account
+
 SERVICE_ACCOUNT_FILE = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
-creds = service_account.Credentials.from_service_account_file( SERVICE_ACCOUNT_FILE, scope)
+creds = service_account.Credentials.from_service_account_file( SERVICE_ACCOUNT_FILE, scopes=scope)
 client = gspread.authorize(creds)
 
 
