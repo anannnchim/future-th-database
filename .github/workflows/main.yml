@@ -31,14 +31,19 @@ jobs:
         credentials_json: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }} 
 
     - name: Run Python script
-      run: python automated-system-f1-th.py 
+      run: python automated-system-f1-th.py   
 
     - name: Commit files
       run: |
         git config --local user.name actions-user
         git config --local user.email "actions@github.com"
         git add *.parquet  # Add all .parquet files in the root directory
-        git commit -m "GH ACTION Updated Data $(date)"
-        git push
+        # Check if there are changes. If there are, commit them.
+        if git diff --staged --quiet; then
+          echo "No changes to commit."
+        else
+          git commit -m "GH ACTION Updated Data $(date)"
+          git push
+        fi
       env:
         REPO_KEY: ${{ secrets.GITHUB_TOKEN }}  # Ensure this matches the secret name
