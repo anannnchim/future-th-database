@@ -30,15 +30,15 @@ jobs:
         pip install pandas gspread oauth2client selenium webdriver_manager gspread_dataframe
 
     - name: Setup Google Credentials
-      run: |
-        echo "${{ secrets.GOOGLE_CREDENTIALS }}" > credentials.json
       env:
         GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+      run: |
+        echo "GOOGLE_APPLICATION_CREDENTIALS=${GOOGLE_CREDENTIALS}" >> $GITHUB_ENV
 
     - name: Run Python script
       run: python test_automation.py
       env:
-        GOOGLE_APPLICATION_CREDENTIALS: ./credentials.json
+        GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
       
  # Add new files in data folder, commit along with other modified files, push
     - name: Commit files
