@@ -8,29 +8,26 @@ This proram will update the database in googlesheet for System F1-TH
 @author: nanthawat
 """
 ##### 1. Import library and define function, global variable ------------------------------------
-# Standard libraries
-import json
-import os
 
-# Data manipulation
-import pandas as pd
-
-# Google Sheets integration
+# Libraries
 import gspread
-from gspread_dataframe import set_with_dataframe
-from google.oauth2.service_account import Credentials
-
-# Selenium for web scraping
+import pandas as pd
+import selenium
+from oauth2client.service_account import ServiceAccountCredentials
+from concurrent.futures import ThreadPoolExecutor
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
+from gspread_dataframe import set_with_dataframe
+import os
+from google.oauth2.service_account import Credentials
+import json
+from google.oauth2 import service_account
 from selenium.common.exceptions import StaleElementReferenceException, TimeoutException
 
-# Concurrency
-from concurrent.futures import ThreadPoolExecutor
 
 # functions
 def scrape_from_tfex(symbol):
