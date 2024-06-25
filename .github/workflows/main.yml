@@ -1,0 +1,42 @@
+# Hourly scraping
+name: sitemap_scraping
+
+# Controls when the action will run.
+on:
+  push:
+    branches: 
+      - main
+  schedule:
+    - cron: '*/3 * * * *' # Change to every 3 mins and push
+
+
+jobs: 
+  autoscrape:
+    # The type of runner that the job will run on
+    runs-on: macos-latest
+
+    # Load repo and install R
+    steps:
+    - uses: actions/checkout@v2  # Use a specific version tag
+    - uses: r-lib/actions/setup-r@v2  # Use a specific version tag
+
+    # Set-up R
+    - name: Install packages
+      run: |
+        R -e 'install.packages("tidyverse")'
+        R -e 'install.packages("rvest")'
+    # Run R script
+    - name: Scrape
+      run: Rscript sitemap_scraping.R
+      
+ # Add new files in data folder, commit along with other modified files, push
+    - name: Commit files
+      run: |
+        git config --local user.name actions-user
+        git config --local user.email "actions@github.com"
+        git add data/*
+        git commit -am "GH ACTION Headlines $(date)"
+        git push origin main
+      env:
+        REPO_KEY: ${{secrets.GITHUB_TOKEN}}
+        username: github-actions
