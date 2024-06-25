@@ -3,11 +3,12 @@
 """
 Created on Mon Jun 24 12:09:19 2024
 
-This proram will update the database in googlesheet for System F1-TH
+This proram will update the database in googlesheet for System F1-TH (MANUALLY)
 
 @author: nanthawat
 """
 ##### 1. Import library and define function, global variable ------------------------------------
+
 # Standard libraries
 import json
 import os
@@ -132,14 +133,14 @@ market_data_url = 'https://docs.google.com/spreadsheets/d/19Rj7iW5xWOe6ZJJRsO9Vz
 ##### 2. Set up onece ------------------------------------
 
 # 1: Authentication (manually)
-#json_keyfile_path = '/Users/nanthawat/Desktop/key/google/system-f1-th/automated-system-f1-th-key.json'
-#creds = ServiceAccountCredentials.from_json_keyfile_name(json_keyfile_path, scope)
-#client = gspread.authorize(creds)
+json_keyfile_path = '/Users/nanthawat/Desktop/key/google/system-f1-th/automated-system-f1-th-key.json'
+creds = ServiceAccountCredentials.from_json_keyfile_name(json_keyfile_path, scope)
+client = gspread.authorize(creds)
 
 # 2: Authentication (Github Action)
-SERVICE_ACCOUNT_FILE = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
-creds = service_account.Credentials.from_service_account_file( SERVICE_ACCOUNT_FILE, scopes=scope)
-client = gspread.authorize(creds)
+#SERVICE_ACCOUNT_FILE = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+#creds = service_account.Credentials.from_service_account_file( SERVICE_ACCOUNT_FILE, scopes=scope)
+#client = gspread.authorize(creds)
 
 # Get sheet from url
 market_input_sheet = client.open_by_url(market_input_url)
