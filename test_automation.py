@@ -132,14 +132,34 @@ market_data_url = 'https://docs.google.com/spreadsheets/d/19Rj7iW5xWOe6ZJJRsO9Vz
 
 ##### 2. Set up onece ------------------------------------
 
+# METHOD manually 1
+#path = '/Users/nanthawat/Desktop/key/google/system-f1-th/automated-system-f1-th-key.json'
+#creds = ServiceAccountCredentials.from_json_keyfile_name(path, scope)
+#client = gspread.authorize(creds)
 # Parse the credentials from the environment variable
-# service_account_info = json.loads(os.environ['GOOGLE_APPLICATION_CREDENTIALS']) # #
+# service_account_info = json.loads(os.environ['GOOGLE_APPLICATION_CREDENTIALS']) 
+#json_keyfile_path = json.loads(os.getenv("GOOGLE_APPLICATION_CREDENTIALS"))
+#json_keyfile_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
 
-json_keyfile_path = json.loads(os.getenv("GOOGLE_APPLICATION_CREDENTIALS"))
 
-# Authentication (manually)
-creds = ServiceAccountCredentials.from_json_keyfile_name(json_keyfile_path, scope)
+# Method 2 
+
+SERVICE_ACCOUNT_FILE = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+# Load the credentials from the service account file
+creds = service_account.Credentials.from_service_account_file(
+    SERVICE_ACCOUNT_FILE,
+    scopes=scope)
+
 client = gspread.authorize(creds)
+
+
+
+
+# ------------------------------
+
+# METHOD 3 : Authentication (manually)
+#creds = ServiceAccountCredentials.from_json_keyfile_name(json_keyfile_path, scope)
+#client = gspread.authorize(creds)
 
 # Get sheet from url
 market_input_sheet = client.open_by_url(market_input_url)
