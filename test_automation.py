@@ -133,17 +133,11 @@ market_data_url = 'https://docs.google.com/spreadsheets/d/19Rj7iW5xWOe6ZJJRsO9Vz
 ##### 2. Set up onece ------------------------------------
 
 # Parse the credentials from the environment variable
-service_account_info = json.loads(os.environ['GOOGLE_APPLICATION_CREDENTIALS'])
-creds = Credentials.from_service_account_info(
-    service_account_info,
-    scopes=['https://spreadsheets.google.com/feeds','https://www.googleapis.com/auth/drive']
-)
-
-client = gspread.authorize(creds)
+json_keyfile_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
 
 # Authentication (manually)
-#creds = ServiceAccountCredentials.from_json_keyfile_name(json_keyfile_path, scope)
-#client = gspread.authorize(creds)
+creds = ServiceAccountCredentials.from_json_keyfile_name(json_keyfile_path, scope)
+client = gspread.authorize(creds)
 
 # Get sheet from url
 market_input_sheet = client.open_by_url(market_input_url)
