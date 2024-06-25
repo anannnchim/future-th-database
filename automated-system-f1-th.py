@@ -74,6 +74,8 @@ def scrape_from_tfex(symbol):
 
     return df
 
+
+# Modified function to avoid timeout when scraping data from website
 def scrape_from_tfex(symbol):
     url = f'https://www.tfex.co.th/en/products/currency/eur-usd-futures/{symbol}/historical-trading'
     xpath = '//*[@id="__layout"]/div/div[2]/div[2]/div[2]/div/div[3]'
