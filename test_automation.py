@@ -30,6 +30,7 @@ from google.oauth2.service_account import Credentials
 import json
 from google.oauth2 import service_account
 
+
 # functions
 def scrape_from_tfex(symbol):
     # Constant
@@ -179,7 +180,6 @@ append_to_sheet(client, market_data_url, 'test_automation',holding_information)
 #set_with_dataframe(worksheet, holding_information, include_index=False, include_column_header=True, resize=True)
 
 # Store data 
-
 holding_information.to_parquet('data/test' + '.parquet',  engine='pyarrow')
 
 ###

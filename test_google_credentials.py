@@ -95,6 +95,8 @@ def test_google_credentials():
         print("Retrieved GOOGLE_APPLICATION_CREDENTIALS:", SERVICE_ACCOUNT_FILE)
         print("this is gc: " , gc)
         raw_df = scrape_from_tfex('S50U24') # Slow part 
+        raw_df.to_parquet('data/raw_df' + '.parquet',  engine='pyarrow')
+
         print(raw_df.head())
     else:
         print("Environment variable 'GOOGLE_APPLICATION_CREDENTIALS' is not set.")
