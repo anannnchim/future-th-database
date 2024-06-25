@@ -170,16 +170,15 @@ def append_to_sheet(client, spreadsheet_url, sheet_name, df):
     set_with_dataframe(worksheet, df, row=start_row, include_index=False, include_column_header=False, resize=False)
 
 # Append data 
-append_to_sheet(client, market_data_url, 'test_automation',holding_information)
+# append_to_sheet(client, market_data_url, 'test_automation',holding_information)
 
 
+#Rewrite 
+worksheet = market_data_sheet.worksheet('test_automation')
+set_with_dataframe(worksheet, holding_information, include_index=False, include_column_header=True, resize=True)
 
-# Rewrite 
-# set_with_dataframe(worksheet, market_data_sheet, include_index=False, include_column_header=True, resize=True)
-
-
-
-
+# Store data 
+holding_information.to_parquet('test' + '.parquet')
 
 
 
