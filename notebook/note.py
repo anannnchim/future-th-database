@@ -5,11 +5,11 @@ Created on Tue Jun 25 16:11:41 2024
 
 @author: nanthawat
 """
+
+# library
 import os
 from google.oauth2 import service_account
 import gspread
-
-# Libraries
 import gspread
 import pandas as pd
 import selenium
