@@ -128,6 +128,50 @@ def scrape_from_tfex(symbol):
     return df
 
 
+
+# Method 3 
+def scrape_from_tfex(symbol):
+    # URL and XPath setup
+    url = f'https://www.tfex.co.th/en/products/currency/eur-usd-futures/{symbol}/historical-trading'
+    xpath = '//*[@id="__layout"]/div/div[2]/div[2]/div[2]/div/div[3]'
+    
+    # Setup WebDriver
+    options = webdriver.ChromeOptions()
+    options.add_argument('--headless')  # Run in headless mode for automation
+    options.add_argument('--no-sandbox')  # Bypass OS security model
+    options.add_argument('--disable-dev-shm-usage')  # Overcome limited resource problems
+    service = Service(ChromeDriverManager().install())
+    driver = webdriver.Chrome(service=service, options=options)
+
+    try:
+        # Load the page
+        driver.get(url)
+        
+        # Wait for the table to be fully loaded and visible
+        wait = WebDriverWait(driver, 10)
+        table_element = wait.until(EC.visibility_of_element_located((By.XPATH, xpath)))
+
+        # Wait until all rows are visible and stable
+        rows = wait.until(EC.visibility_of_all_elements_located((By.XPATH, f"{xpath}//tr")))
+
+        # Parse each row into a list of columns
+        data = []
+        for row in rows:
+            cells = row.find_elements(By.TAG_NAME, 'td')
+            formatted_row = [cell.text for cell in cells if cell.text]
+            if formatted_row:
+                data.append(formatted_row)
+
+        # Create DataFrame with appropriate column headers
+        df = pd.DataFrame(data, columns=['Date', 'Open', 'High', 'Low', 'Close', 'SP', 'Chg', '%Chg', 'Vol (Contract)', 'OI (Contract)'])
+        df['Symbol'] = symbol  # Add the symbol column
+    finally:
+        # Cleanup: close browser regardless of success or failure
+        driver.quit()
+
+    return df
+
+
 def prep_df(raw_df):
     """
     Transforms the input DataFrame to:

@@ -20,6 +20,7 @@ import pandas as pd
 import gspread
 from gspread_dataframe import set_with_dataframe
 from google.oauth2.service_account import Credentials
+from oauth2client.service_account import ServiceAccountCredentials
 
 # Selenium for web scraping
 from selenium import webdriver
