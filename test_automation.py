@@ -7,6 +7,7 @@ Created on Tue Jun 25 09:57:05 2024
 """
 
 # import library
+import gspread
 
 # Load data from googlesheet
 
