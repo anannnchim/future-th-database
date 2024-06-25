@@ -33,6 +33,7 @@ from selenium.common.exceptions import StaleElementReferenceException, TimeoutEx
 # Concurrency
 from concurrent.futures import ThreadPoolExecutor
 
+
 # functions
 def scrape_from_tfex(symbol):
     # Constant
