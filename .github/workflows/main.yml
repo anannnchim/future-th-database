@@ -1,18 +1,14 @@
-# Hourly scraping
 name: Automated Python
 
-# STEP: Clone / grant access for git action
 on:
   push:
     branches: 
       - main
   schedule:
-    - cron: '*/3 * * * *' # Change to every 3 mins and push
-
+    - cron: '*/3 * * * *' # Run every 3 minutes
 
 jobs: 
   autoscrape:
-    # The type of runner that the job will run on
     runs-on: ubuntu-latest
     
     steps:
@@ -21,33 +17,30 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
-        python-version: '3.9'  # Specify the Python version you are using
-    
+        python-version: '3.9'  # Using Python 3.9
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install gspread oauth2client pandas # Add other dependencies as needed
-        pip install pandas gspread oauth2client selenium webdriver_manager gspread_dataframe
+        pip install gspread oauth2client pandas selenium webdriver-manager gspread_dataframe
 
     - name: Setup Google Credentials
-      env:
-        GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
       run: |
-        echo "GOOGLE_APPLICATION_CREDENTIALS=${GOOGLE_CREDENTIALS}" >> $GITHUB_ENV
+        echo 'GOOGLE_APPLICATION_CREDENTIALS<<EOF' >> $GITHUB_ENV
+        echo '${{ secrets.GOOGLE_CREDENTIALS }}' >> $GITHUB_ENV
+        echo 'EOF' >> $GITHUB_ENV
 
     - name: Run Python script
       run: python test_automation.py
       env:
-        GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+        GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
       
- # Add new files in data folder, commit along with other modified files, push
     - name: Commit files
       run: |
         git config --local user.name actions-user
         git config --local user.email "actions@github.com"
-        git add data/*
-        git commit -am "GH ACTION Headlines $(date)"
-        git push origin main
+        git add data/*  # Adjust this path if your data directory differs
+        git commit -m "GH ACTION Headlines $(date)" -a
+        git push
       env:
-        REPO_KEY: ${{secrets.GITHUB_TOKEN}}
-        username: github-actions
+        REPO_KEY: ${{ secrets.GITHUB_TOKEN }}
