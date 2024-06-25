@@ -31,7 +31,7 @@ jobs:
         echo 'EOF' >> $GITHUB_ENV
 
     - name: Run Python script
-      run: python test_automation.py
+      run: python test_google_credentials.py
       env:
         GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
       
