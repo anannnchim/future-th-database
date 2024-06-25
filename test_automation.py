@@ -143,7 +143,7 @@ market_data_url = 'https://docs.google.com/spreadsheets/d/19Rj7iW5xWOe6ZJJRsO9Vz
 
 
 # Method 2 
-
+from google.oauth2 import service_account
 SERVICE_ACCOUNT_FILE = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
 # Load the credentials from the service account file
 creds = service_account.Credentials.from_service_account_file(
