@@ -37,7 +37,7 @@ jobs:
       run: |
         git config --local user.name actions-user
         git config --local user.email "actions@github.com"
-        git add data/*  # Adjust this path if your data directory differs
+        git add raw_df.parquet  # Add the file located outside the data directory
         git commit -m "GH ACTION Updated Data $(date)"
         git push
       env:
