@@ -28,10 +28,10 @@ jobs:
     - name: Authenticate to Google Cloud
       uses: google-github-actions/auth@v2
       with:
-        credentials_json: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}  # Ensure this matches the secret name
+        credentials_json: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}  # Ensure this matches the secret name 
 
     - name: Run Python script
-      run: python test_google_credentials.py  # Ensure script name matches your script's filename
+      run: python test_google_credentials.py  # Ensure script name matches your script's filename test
 
     - name: Commit files
       run: |
