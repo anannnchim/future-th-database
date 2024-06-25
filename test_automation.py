@@ -170,9 +170,9 @@ holding_information = market_input_sheet.worksheet('holding_information')
 holding_information = pd.DataFrame(holding_information.get_all_records()) 
 
 # Scrape data from website
-raw_df_prev = scrape_from_tfex("S50M24")
-prev_df = prep_df(raw_df_prev)
-prev_df = prev_df.tail(2)
+#raw_df_prev = scrape_from_tfex("S50M24")
+#prev_df = prep_df(raw_df_prev)
+#prev_df = prev_df.tail(2)
 
 # Append to googlesheet 
 def append_to_sheet(client, spreadsheet_url, sheet_name, df):
@@ -188,7 +188,7 @@ def append_to_sheet(client, spreadsheet_url, sheet_name, df):
     set_with_dataframe(worksheet, df, row=start_row, include_index=False, include_column_header=False, resize=False)
 
 # Append data 
-append_to_sheet(client, market_data_url, 'test_automation',prev_df)
+append_to_sheet(client, market_data_url, 'test_automation',holding_information)
 
 
 
