@@ -22,6 +22,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
+        pip install pandas pyarrow  # Add pyarrow here for Parquet file handling
         pip install gspread oauth2client pandas selenium webdriver-manager gspread_dataframe
 
     - name: Authenticate to Google Cloud
@@ -30,7 +31,7 @@ jobs:
         credentials_json: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}  # Ensure this matches the secret name
 
     - name: Run Python script
-      run: python test_automation.py  # Ensure script name matches your script's filename
+      run: python test_google_credentials.py  # Ensure script name matches your script's filename
 
     - name: Commit files
       run: |
