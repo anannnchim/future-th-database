@@ -323,6 +323,7 @@ for symbol in holding_information['current_symbol']:
     # Scrape data from website
     raw_df = scrape_from_tfex(symbol)
     df = prep_df(raw_df)
+
     print("2 - Finish: Scrape data from website")
 
     
@@ -401,11 +402,11 @@ for symbol in holding_information['current_symbol']:
 # log 2.2: check backadjusted (S50) forgot to remove data 
 # log 2.3: check backadjusted (S50) 
 # - incorrect, might come from when trying to download previous data 
-# log 2.4: same as 2.3 but increase timeout and retry 
+# log 2.4: same as 2.3 but increase timeout and retry (20,360)
+# - there is additional row
+# log 2.5 retry 
 
-
-
-# Pending need to update all data, some data , backadjusted, store data 
+# backadjusted, store data 
 
      
 
