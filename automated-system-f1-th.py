@@ -3,7 +3,7 @@
 """
 Created on Mon Jun 24 12:09:19 2024
 
-This proram will update the database in googlesheet for System F1-TH
+This proram will update the database in googlesheet for System F1-TH retry
 
 @author: nanthawat
 """
