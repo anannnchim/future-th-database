@@ -404,7 +404,9 @@ for symbol in holding_information['current_symbol']:
 # - incorrect, might come from when trying to download previous data 
 # log 2.4: same as 2.3 but increase timeout and retry (20,360)
 # - there is additional row
-# log 2.5 retry 
+# log 2.5 retry (current hold != prev, prev date = date )
+# - all good
+# log 2.6 (need to backadj S50)
 
 # backadjusted, store data 
 
