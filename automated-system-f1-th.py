@@ -397,7 +397,9 @@ for symbol in holding_information['current_symbol']:
 # log 2 retry (some empty row in database )
 # - work all correct
 # log 2.1: need to update all data (remove all 25 date)
-#
+# - work all correct
+# log 2.2: check backadjusted (S50)
+
 
 
 
