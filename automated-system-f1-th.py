@@ -393,6 +393,8 @@ for symbol in holding_information['current_symbol']:
 # log 1.8 add timeout to be 180 and retry from 3 to 10 
 # - work! all correct. 
 # log 1.9 retry 
+# - work! all correct
+# log 2 retry (some empty row in database )
 
      
 
