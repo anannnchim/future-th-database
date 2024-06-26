@@ -296,11 +296,6 @@ for symbol in holding_information['current_symbol']:
 
     print("4 - All done.")     
         
-    
-    
-# Try the same but run in internal environment
-
-
 
 
 

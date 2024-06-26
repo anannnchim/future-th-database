@@ -275,6 +275,9 @@ for symbol in holding_information['current_symbol']:
         market_data_sheet = client.open_by_url(market_data_url)
         worksheet = market_data_sheet.worksheet(ticker)
         
+        # Removing rows with any empty values in specific columns
+        prev_backadj_df = prev_backadj_df.dropna(subset=['sp'], how='any')
+
         set_with_dataframe(worksheet, prev_backadj_df, include_index=False, include_column_header=True, resize=True)
         
         print("3 - Finish: Update googlesheet")
