@@ -228,5 +228,8 @@ for symbol in holding_information['current_symbol']:
     print("4 - All done.")     
         
     
+    
+# log 1.3: retry same as log 1.2 (all data is already updated with no space)
+     
         
         
