@@ -325,6 +325,7 @@ for symbol in holding_information['current_symbol']:
 # log 3 same, but add remove empty row 
 # - it remove all 
 # log 3.1 remove quit in the func
+# - wrong 
 
 
 
