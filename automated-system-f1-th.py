@@ -3,7 +3,7 @@
 """
 Created on Mon Jun 24 12:09:19 2024
 
-This proram will update the database in googlesheet for System F1-TH retry
+This proram will update the database in googlesheet for System F1-TH. 
 
 @author: nanthawat
 """
@@ -30,6 +30,7 @@ from selenium.common.exceptions import StaleElementReferenceException, TimeoutEx
 
 # functions
 def scrape_from_tfex(symbol):
+    
     # Constant
     url = 'https://www.tfex.co.th/en/products/currency/eur-usd-futures/' + symbol + '/historical-trading'
     xpath = '//*[@id="__layout"]/div/div[2]/div[2]/div[2]/div/div[3]'
@@ -221,7 +222,7 @@ for symbol in holding_information['current_symbol']:
         
         print("3 - Finish: Update googlesheet")
         
-        # Save data
+        # store data
         # prev_backadj_df.to_parquet(ticker + '.parquet', engine='pyarrow')
 
     print("4 - All done.")     
