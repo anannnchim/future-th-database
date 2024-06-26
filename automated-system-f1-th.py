@@ -190,10 +190,10 @@ def scrape_from_tfex(symbol):
     data = []
     try:
         driver.get(url)
-        wait = WebDriverWait(driver, 180)
+        wait = WebDriverWait(driver, 360)
         table_element = wait.until(EC.visibility_of_element_located((By.XPATH, xpath)))
 
-        retries = 10  # Number of retries for fetching rows
+        retries = 20  # Number of retries for fetching rows
         for _ in range(retries):
             try:
                 rows = table_element.find_elements(By.TAG_NAME, 'tr')
@@ -400,7 +400,8 @@ for symbol in holding_information['current_symbol']:
 # - work all correct
 # log 2.2: check backadjusted (S50) forgot to remove data 
 # log 2.3: check backadjusted (S50) 
-
+# - incorrect, might come from when trying to download previous data 
+# log 2.4: same as 2.3 but increase timeout and retry 
 
 
 
