@@ -90,7 +90,7 @@ def scrape_from_tfex(symbol):
     data = []
     try:
         driver.get(url)
-        wait = WebDriverWait(driver, 10)
+        wait = WebDriverWait(driver, 60)
         table_element = wait.until(EC.visibility_of_element_located((By.XPATH, xpath)))
 
         retries = 3  # Number of retries for fetching rows
@@ -283,6 +283,8 @@ for symbol in holding_information['current_symbol']:
 # - fail at scrape data at GF10 3 
 # - incorrect format 
 # log 1.5: Use modified version
+# - pass but, incorrect 
+# log 1.6: change timeout to be 60 in modified func
 
 
      
