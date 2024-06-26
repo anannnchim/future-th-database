@@ -314,7 +314,8 @@ for symbol in holding_information['current_symbol']:
 # log 2.7 try original func but increase timeout
 # - error, move back to modified version
 # log 2.8 add timeout to be 1000
-
+# it work! bang!
+# log 2.9 retry same as 2.8
 # backadjusted, store data 
 
      
