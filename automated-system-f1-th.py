@@ -275,8 +275,6 @@ for symbol in holding_information['current_symbol']:
         market_data_sheet = client.open_by_url(market_data_url)
         worksheet = market_data_sheet.worksheet(ticker)
         
-        prev_backadj_df = prev_backadj_df.dropna(how='any') # ADDD
-
         set_with_dataframe(worksheet, prev_backadj_df, include_index=False, include_column_header=True, resize=True)
         
         print("3 - Finish: Update googlesheet")
@@ -287,53 +285,3 @@ for symbol in holding_information['current_symbol']:
     print("4 - All done.")     
         
     
-    
-# log (forgot): retry same as log 1.2 (all data is already updated with no space)
-# -> fail at scrape data at USD 2 
-# log 1.4: Change timeout of function to be 60.
-# - fail at scrape data at GF10 3 
-# - incorrect format 
-# log 1.5: Use modified version
-# - pass but, incorrect 
-# log 1.6: change timeout to be 60 in modified func
-# - pass but incorrect version
-# log 1.7 add fix version 
-# - error about in funcion
-# log 1.8 add timeout to be 180 and retry from 3 to 10 
-# - work! all correct. 
-# log 1.9 retry 
-# - work! all correct
-# log 2 retry (some empty row in database )
-# - work all correct
-# log 2.1: need to update all data (remove all 25 date)
-# - work all correct
-# log 2.2: check backadjusted (S50) forgot to remove data 
-# log 2.3: check backadjusted (S50) 
-# - incorrect, might come from when trying to download previous data 
-# log 2.4: same as 2.3 but increase timeout and retry (20,360)
-# - there is additional row
-# log 2.5 retry (current hold != prev, prev date = date )
-# - all good
-# log 2.6 (need to backadj S50)
-# - incorrect 
-# log 2.7 try original func but increase timeout
-# - error, move back to modified version
-# log 2.8 add timeout to be 1000
-# it work! bang!
-# log 2.9 retry same as 2.8
-# it not work, incorrect S50 and USD  (two problem)
-# log 3 same, but add remove empty row 
-# - it remove all 
-# log 3.1 remove quit in the func
-# - wrong 
-
-
-
-# backadjusted, store data 
-
-     
-
-
-
-        
-        
