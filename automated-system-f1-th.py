@@ -48,7 +48,7 @@ def scrape_from_tfex(symbol):
         driver.get(url)
         
         # Use WebDriverWait to wait for the table to be loaded
-        wait = WebDriverWait(driver, 10)  # Timeout after 10 seconds
+        wait = WebDriverWait(driver, 60)  # Timeout after 10 seconds
         table_element = wait.until(EC.visibility_of_element_located((By.XPATH, xpath)))
 
         # Extract the rows using a more specific XPath to directly access the cells
@@ -229,7 +229,10 @@ for symbol in holding_information['current_symbol']:
         
     
     
-# log 1.3: retry same as log 1.2 (all data is already updated with no space)
+# log (forgot): retry same as log 1.2 (all data is already updated with no space)
+# -> fail at scrape data at USD
+# log 1.4: Change timeout of function to be 60.
+
      
         
         
