@@ -80,3 +80,116 @@ def scrape_from_tfex(symbol):
         return pd.DataFrame()  # Return an empty DataFrame on timeout
     finally:
         driver.quit()
+
+
+
+
+# 
+
+sheet = market_data_sheet.worksheet('S50')
+data = sheet.get_all_records()
+prev_backadj_df = pd.DataFrame(data)
+prev_backadj_df['date'] = pd.to_datetime(prev_backadj_df['date'], format='%Y-%m-%d')
+
+
+
+# Method 4:
+    
+def fetch_cell_text(cell):
+    try:
+        return cell.text
+    except StaleElementReferenceException:
+        return None
+def scrape_from_tfex(symbol):
+    
+    # URL and XPath setup
+    url = f'https://www.tfex.co.th/en/products/currency/eur-usd-futures/{symbol}/historical-trading'
+    xpath = '//*[@id="__layout"]/div/div[2]/div[2]/div[2]/div/div[3]'
+    
+    # Setup WebDriver
+    options = webdriver.ChromeOptions()
+    options.add_argument('--headless')  # Run in headless mode for automation
+    options.add_argument('--no-sandbox')  # Bypass OS security model
+    options.add_argument('--disable-dev-shm-usage')  # Overcome limited resource problems
+    service = Service(ChromeDriverManager().install())
+    driver = webdriver.Chrome(service=service, options=options)
+
+        
+    try:
+        driver.get(url)
+        wait = WebDriverWait(driver, 30)
+        table_element = wait.until(EC.visibility_of_element_located((By.XPATH, xpath)))
+        rows = table_element.find_elements(By.TAG_NAME, 'tr')
+        data = []
+        for row in rows:
+            cells = row.find_elements(By.TAG_NAME, 'td')
+            formatted_row = [fetch_cell_text(cell) for cell in cells if fetch_cell_text(cell) is not None]
+            if formatted_row:
+                data.append(formatted_row)
+        df = pd.DataFrame(data, columns=['Date', 'Open', 'High', 'Low', 'Close', 'SP', 'Chg', '%Chg', 'Vol (Contract)', 'OI (Contract)'])
+        df['Symbol'] = symbol
+    finally:
+        driver.quit()
+    return df
+    
+
+
+
+# Method 3 
+def scrape_from_tfex(symbol):
+    # URL and XPath setup
+    url = f'https://www.tfex.co.th/en/products/currency/eur-usd-futures/{symbol}/historical-trading'
+    xpath = '//*[@id="__layout"]/div/div[2]/div[2]/div[2]/div/div[3]'
+    
+    # Setup WebDriver
+    options = webdriver.ChromeOptions()
+    options.add_argument('--headless')  # Run in headless mode for automation
+    options.add_argument('--no-sandbox')  # Bypass OS security model
+    options.add_argument('--disable-dev-shm-usage')  # Overcome limited resource problems
+    service = Service(ChromeDriverManager().install())
+    driver = webdriver.Chrome(service=service, options=options)
+
+    try:
+        # Load the page
+        driver.get(url)
+        
+        # Wait for the table to be fully loaded and visible
+        wait = WebDriverWait(driver, 10)
+        table_element = wait.until(EC.visibility_of_element_located((By.XPATH, xpath)))
+
+        # Wait until all rows are visible and stable
+        rows = wait.until(EC.visibility_of_all_elements_located((By.XPATH, f"{xpath}//tr")))
+
+        # Parse each row into a list of columns
+        data = []
+        for row in rows:
+            cells = row.find_elements(By.TAG_NAME, 'td')
+            formatted_row = [cell.text for cell in cells if cell.text]
+            if formatted_row:
+                data.append(formatted_row)
+
+        # Create DataFrame with appropriate column headers
+        df = pd.DataFrame(data, columns=['Date', 'Open', 'High', 'Low', 'Close', 'SP', 'Chg', '%Chg', 'Vol (Contract)', 'OI (Contract)'])
+        df['Symbol'] = symbol  # Add the symbol column
+    finally:
+        # Cleanup: close browser regardless of success or failure
+        driver.quit()
+
+    return df
+
+
+
+
+
+import requests
+response = requests.get('https://sheets.googleapis.com/v4/spreadsheets/YOUR_SPREADSHEET_ID', timeout=60)  # Set timeout to 60 seconds
+
+
+
+import gspread
+gc = gspread.service_account()
+gc.session.timeout = 60  # Set a longer timeout
+
+
+
+

@@ -139,6 +139,9 @@ json_keyfile_path = '/Users/nanthawat/Desktop/key/google/system-f1-th/automated-
 creds = ServiceAccountCredentials.from_json_keyfile_name(json_keyfile_path, scope)
 client = gspread.authorize(creds)
 
+# Increase the timeout for the HTTP session used by gspread
+client.session.timeout = 60  # Set timeout to 60 seconds
+
 # 2: Authentication (Github Action)
 #SERVICE_ACCOUNT_FILE = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
 #creds = service_account.Credentials.from_service_account_file( SERVICE_ACCOUNT_FILE, scopes=scope)
