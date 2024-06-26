@@ -272,6 +272,9 @@ for symbol in holding_information['current_symbol']:
         # Rewrite data on googlesheet
         market_data_sheet = client.open_by_url(market_data_url)
         worksheet = market_data_sheet.worksheet(ticker)
+        
+        prev_backadj_df = prev_backadj_df.dropna(how='any') # ADDD
+
         set_with_dataframe(worksheet, prev_backadj_df, include_index=False, include_column_header=True, resize=True)
         
         print("3 - Finish: Update googlesheet")
@@ -316,6 +319,12 @@ for symbol in holding_information['current_symbol']:
 # log 2.8 add timeout to be 1000
 # it work! bang!
 # log 2.9 retry same as 2.8
+# it not work, incorrect S50 and USD  (two problem)
+# log 3 same, but add remove empty row 
+
+
+
+
 # backadjusted, store data 
 
      
