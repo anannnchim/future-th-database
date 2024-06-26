@@ -121,8 +121,8 @@ def scrape_from_tfex(symbol):
     except TimeoutException:
         print(f"Failed to load the webpag2e or locate the element within the timeout period.")
         return pd.DataFrame()  # Return an empty DataFrame on timeout
-#    finally:
-#        driver.quit()
+    finally:
+        driver.quit()
         
 
 def prep_df(raw_df):
