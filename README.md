@@ -26,9 +26,3 @@ For manual updates on contract roll dates, use:
 - `manual-system-f1-th.py`: For the standard manual update process.
 - `manual-system-f1-th-ver2.py`: For an alternative approach to the manual update process.
 
-## Setup and Execution
-
-To set up and run the scripts locally, you need Python 3.x and the necessary libraries installed. Install dependencies via:
-
-```bash
-pip install -r requirements.txt
