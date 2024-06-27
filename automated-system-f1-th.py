@@ -280,6 +280,8 @@ for symbol in holding_information['current_symbol']:
 
         set_with_dataframe(worksheet, prev_backadj_df, include_index=False, include_column_header=True, resize=True)
         
+        print(prev_backadj_df['date'].tail(1))
+        
         print("3 - Finish: Update googlesheet")
         
         # store data
