@@ -30,9 +30,12 @@ jobs:
       with:
         credentials_json: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }} 
 
-    - name: Run Python script
+    - name: Run Automated script
       run: python automated-system-f1-th.py   
-
+      
+    - name: Run backup S50 script
+      run: python automate-S50.py   
+      
     - name: Commit files
       run: |
         git config --local user.name actions-user
