@@ -237,7 +237,7 @@ for symbol in holding_information['current_symbol']:
         print("3 - Database is already updated")
         
         # Store data 
-        prev_backadj_df['date'] = prev_backadj_df['date'].dt.strftime('%Y-%m-%d')
+        #prev_backadj_df['date'] = prev_backadj_df['date'].dt.strftime('%Y-%m-%d')
         # prev_backadj_df.to_parquet(ticker + '.parquet',  engine='pyarrow')
     
     else:
