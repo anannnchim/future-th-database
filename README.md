@@ -26,3 +26,9 @@ For manual updates on contract roll dates, use:
 - `manual-system-f1-th.py`: For the standard manual update process.
 - `manual-system-f1-th-ver2.py`: For an alternative approach to the manual update process.
 
+## Manual User Input 
+
+Quarterly (Every time we roll) 
+- Change the symbol in backup file.
+- Might need to backup data before roll, just in case it fail.
+- If it fail to update on the roll date, use manual scripts to do so. 
