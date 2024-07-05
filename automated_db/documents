@@ -1,0 +1,39 @@
+Strucuture of files
+
+Program: automated_db
+
+1. main.R
+
+2. data
+- S50.rds
+- USD.rds
+- GF10.rds
+
+3. scripts
+- import_input.R
+
+  data_acquisition
+    - scrape_raw_data.R
+    
+  data_cleaning
+    - clean_and_reformat.R
+    
+  data_up  
+    
+
+  /scripts
+    import_input.R
+    /data_acquisition
+      scrape_raw_data.R
+    /data_cleaning
+      clean_and_reformat.R
+    /data_import
+      import_data_from_db.R
+    /data_update
+      update_data.R
+      save_updated_data_to_db.R
+    /program_validation
+      run_validation_test.R
+    /postgresql
+      db_connect.R
+      db_operation.R

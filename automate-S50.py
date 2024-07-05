@@ -171,6 +171,45 @@ def prep_df(raw_df):
 
 
 
+def is_database_updated(prev_df, current_df):
+    """
+    Checks whether the last date in current_df is the same as in prev_df to determine
+    if the database is up-to-date.
+
+    Args:
+    prev_df (pd.DataFrame): The DataFrame containing previous data.
+    current_df (pd.DataFrame): The DataFrame with current data.
+
+    Returns:
+    bool: True if the databases are updated, False otherwise.
+    """
+    try:
+        # Check if either dataframe is empty
+        if prev_df.empty or current_df.empty:
+            print("One or both DataFrames are empty.")
+            return False
+
+        # Check if 'date' column exists and is not null
+        if 'date' not in prev_df.columns or 'date' not in current_df.columns:
+            print("Missing 'date' column in one or both DataFrames.")
+            return False
+
+        # Ensure there are no null dates in the last positions
+        if pd.isnull(prev_df['date'].tail(1).values[0]) or pd.isnull(current_df['date'].tail(1).values[0]):
+            print("Null date values found in the last position of one or both DataFrames.")
+            return False
+
+        # Compare the latest dates
+        if prev_df['date'].tail(1).values[0] == current_df['date'].tail(1).values[0]:
+            return True
+        else:
+            return False
+
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return False
+
+
 
 
 # global variables
@@ -181,14 +220,14 @@ market_data_url = 'https://docs.google.com/spreadsheets/d/19Rj7iW5xWOe6ZJJRsO9Vz
 ##### 2. Set up onece ------------------------------------
 
 # 1: Authentication (manually)
-#json_keyfile_path = '/Users/nanthawat/Desktop/key/google/system-f1-th/automated-system-f1-th-key.json'
-#creds = ServiceAccountCredentials.from_json_keyfile_name(json_keyfile_path, scope)
-#client = gspread.authorize(creds)
+json_keyfile_path = '/Users/nanthawat/Desktop/key/google/system-f1-th/automated-system-f1-th-key.json'
+creds = ServiceAccountCredentials.from_json_keyfile_name(json_keyfile_path, scope)
+client = gspread.authorize(creds)
 
 # 2: Authentication (Github Action)
-SERVICE_ACCOUNT_FILE = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
-creds = service_account.Credentials.from_service_account_file( SERVICE_ACCOUNT_FILE, scopes=scope)
-client = gspread.authorize(creds)
+#SERVICE_ACCOUNT_FILE = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+#creds = service_account.Credentials.from_service_account_file( SERVICE_ACCOUNT_FILE, scopes=scope)
+#client = gspread.authorize(creds)
 
 # Get sheet from url
 market_data_sheet = client.open_by_url(market_data_url)
@@ -207,17 +246,20 @@ sheet = market_data_sheet.worksheet(ticker)
 data = sheet.get_all_records()
 prev_backadj_df = pd.DataFrame(data)
 prev_backadj_df['date'] = pd.to_datetime(prev_backadj_df['date'], format='%Y-%m-%d')
+prev_backadj_df = prev_backadj_df.sort_values(by='date', ascending=True)
 print("1 - Finish: Download data from googlesheet ")
 
 # Scrape data from website
 raw_df = scrape_from_tfex(symbol)
 df = prep_df(raw_df)
+df = df.sort_values(by='date', ascending=True)
 print("last update from tfex: ", print(df.tail(1).date))
 print("2 - Finish: Scrape data from website")
 
 
+print("Checking whether data is updated or not")
 # Check whether database is already updated or not
-if prev_backadj_df['date'].tail(1).item() == df['date'].tail(1).item():
+if  is_database_updated(prev_backadj_df, df):
     
     # Already update
     print("3 - Database is already updated")
