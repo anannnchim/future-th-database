@@ -14,7 +14,23 @@ Created on Mon Jun 24 12:09:19 2024
 This proram will update the database in googlesheet for System F1-TH (RUN manually 2) 
 
 @author: nanthawat
+
+For automation: 
+1. crontab -e
+
+2. 
+30 8 * * * /Users/nanthawat/opt/anaconda3/bin/python3 /Users/nanthawat/Documents/GitHub/automation/future-th-database/manual-system-f1-th-ver2.py
+30 8 * * * /Users/nanthawat/opt/anaconda3/bin/python3 /Users/nanthawat/Documents/GitHub/automation/future-th-database/manual-system-f1-th-ver2.py >> /Users/nanthawat/cron.log 2>&1
+0 10 * * * /Users/nanthawat/opt/anaconda3/bin/python3 /Users/nanthawat/Documents/GitHub/automation/future-th-database/manual-system-f1-th-ver2.py >> /Users/nanthawat/cron.log 2>&1
+
+
+3. Save
+- press ESC
+- :wq
+- press Enter
 """
+
+
 ##### 1. Import library and define function, global variable ------------------------------------
 
 # Libraries
