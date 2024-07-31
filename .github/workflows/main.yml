@@ -5,7 +5,7 @@ on:
     branches:
       - main
   schedule:
-    - cron: '0 21 * * *' # This is 05:00 AM Thailand time (UTC+7+1) in UTC time
+    - cron: '0 21 * * *' # This is 05:00 AM Thailand time (UTC+7+1) in UTC time test
 
 jobs:
   autoscrape:
@@ -37,7 +37,7 @@ jobs:
       run: python automate-S50.py   
 
     - name: Run backup USD script
-      run: python automate-USD.py   
+      run: python automate-USD.py    
 
     - name: Run backup GF10 script
       run: python automate-GF10.py   
