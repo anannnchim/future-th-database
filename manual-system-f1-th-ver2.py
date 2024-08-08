@@ -52,6 +52,8 @@ import json
 from google.oauth2 import service_account
 from selenium.common.exceptions import StaleElementReferenceException, TimeoutException
 
+
+
 # functions
 def scrape_from_tfex(symbol):
     
@@ -100,16 +102,15 @@ def scrape_from_tfex(symbol):
 
 
 
-# Modified function to avoid timeout when scraping data from website
 def scrape_from_tfex(symbol):
     url = f'https://www.tfex.co.th/en/products/currency/eur-usd-futures/{symbol}/historical-trading'
     xpath = '//*[@id="__layout"]/div/div[2]/div[2]/div[2]/div/div[3]'
-    
+
     options = webdriver.ChromeOptions()
     options.add_argument('--headless')
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')
-    
+
     service = Service(ChromeDriverManager().install())
     driver = webdriver.Chrome(service=service, options=options)
 
@@ -137,7 +138,9 @@ def scrape_from_tfex(symbol):
 
         # Define the DataFrame with appropriate column headers if data was successfully retrieved
         if data:
-            df = pd.DataFrame(data, columns=['Date', 'Open', 'High', 'Low', 'Close', 'SP', 'Chg', '%Chg', 'Vol (Contract)', 'OI (Contract)'])
+            df = pd.DataFrame(data,
+                              columns=['Date', 'Open', 'High', 'Low', 'Close', 'SP', 'Chg', '%Chg', 'Vol (Contract)',
+                                       'OI (Contract)'])
             df['Symbol'] = symbol  # Add the 'Symbol' column
             return df
         else:
@@ -147,6 +150,7 @@ def scrape_from_tfex(symbol):
         return pd.DataFrame()  # Return an empty DataFrame on timeout
     finally:
         driver.quit()
+
         
 
 def prep_df(raw_df):
@@ -206,14 +210,14 @@ market_data_url = 'https://docs.google.com/spreadsheets/d/19Rj7iW5xWOe6ZJJRsO9Vz
 ##### 2. Set up onece ------------------------------------
 
 # 1: Authentication (manually)
-json_keyfile_path = '/Users/nanthawat/Desktop/key/google/system-f1-th/automated-system-f1-th-key.json'
-creds = ServiceAccountCredentials.from_json_keyfile_name(json_keyfile_path, scope)
-client = gspread.authorize(creds)
+#json_keyfile_path = '/Users/nanthawat/Desktop/key/google/system-f1-th/automated-system-f1-th-key.json'
+#creds = ServiceAccountCredentials.from_json_keyfile_name(json_keyfile_path, scope)
+#client = gspread.authorize(creds)
 
 # 2: Authentication (Github Action)
-#SERVICE_ACCOUNT_FILE = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
-#creds = service_account.Credentials.from_service_account_file( SERVICE_ACCOUNT_FILE, scopes=scope)
-#client = gspread.authorize(creds)
+SERVICE_ACCOUNT_FILE = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+creds = service_account.Credentials.from_service_account_file( SERVICE_ACCOUNT_FILE, scopes=scope)
+client = gspread.authorize(creds)
 
 # Get sheet from url
 market_input_sheet = client.open_by_url(market_input_url)
