@@ -235,10 +235,14 @@ for symbol in holding_information['current_symbol']:
     
     
     # 1: Authentication (manually)
-    json_keyfile_path = '/Users/nanthawat/Desktop/key/google/system-f1-th/automated-system-f1-th-key.json'
-    creds = ServiceAccountCredentials.from_json_keyfile_name(json_keyfile_path, scope)
-    client = gspread.authorize(creds)
+    #json_keyfile_path = '/Users/nanthawat/Desktop/key/google/system-f1-th/automated-system-f1-th-key.json'
+    #creds = ServiceAccountCredentials.from_json_keyfile_name(json_keyfile_path, scope)
+    #client = gspread.authorize(creds)
     
+    # (Github action)
+    SERVICE_ACCOUNT_FILE = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+    creds = service_account.Credentials.from_service_account_file( SERVICE_ACCOUNT_FILE, scopes=scope)
+    client = gspread.authorize(creds)
     
     market_data_sheet = client.open_by_url(market_data_url)
 
