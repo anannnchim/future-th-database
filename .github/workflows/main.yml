@@ -1,4 +1,4 @@
-name: Automated Python
+name: Automated Python 1
 
 on:
   push:
