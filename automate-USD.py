@@ -235,7 +235,7 @@ market_data_sheet = client.open_by_url(market_data_url)
 ##### 3. loop through each symbol ------------------------------------
 
 # Current holding  <<< INPUT
-symbol = 'USDZ24'
+symbol = 'USDH25'
 
 # START 
 ticker = symbol[:-3]
