@@ -247,7 +247,7 @@ for symbol in holding_information['current_symbol']:
     market_data_sheet = client.open_by_url(market_data_url)
 
     # START 
-    ticker = symbol[:-5] # Change from -3 to -5 
+    ticker = symbol[:-3] # Change back to -3 
     print(symbol)
     
     # Import data form googlesheet
