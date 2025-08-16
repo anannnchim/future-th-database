@@ -5,30 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="efcd3726-0095-473a-86ca-8543b5aa2b14" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.github/workflows/main.yml" beforeDir="false" afterPath="$PROJECT_DIR$/.github/workflows/main.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/automate-GF10.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/automate-S50.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/automate-USD.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/automated-system-f1-th.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/automated_db/.Rprofile" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/automated_db/automated_db.Rproj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/automated_db/backup_data.R" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/automated_db/documents" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/automated_db/main.R" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/automated_db/renv.lock" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/automated_db/renv/.gitignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/automated_db/renv/activate.R" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/automated_db/renv/settings.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/automated_db/scripts/data_acquisition/scrape_raw_data.R" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/automated_db/scripts/data_import/import_data_from_db.R" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/automated_db/scripts/math_operations/math_basic.R" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/automated_db/scripts/postgresql/db_connect.R" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/automated_db/scripts/postgresql/db_operations.R" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/manual-system-f1-th.py" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/scripts/check_gsheets_dates.py" beforeDir="false" afterPath="$PROJECT_DIR$/scripts/check_gsheets_dates.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_automation/test_automation.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_automation/test_google_credentials.py" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

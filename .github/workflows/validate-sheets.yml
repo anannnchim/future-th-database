@@ -1,72 +1,68 @@
-#name: Validate Google Sheet Dates
-#
-#on:
-#  workflow_run:
-#    workflows: ["Automated Python 1"]
-#    types: [completed]
-#  schedule:
-#    - cron: '5 21 * * *'
-#    - cron: '35 21 * * *'
-#    - cron: '5 22 * * *'
-#    - cron: '35 22 * * *'
-#    - cron: '5 23 * * *'
-#    - cron: '35 23 * * *'
-#    - cron: '5 0 * * *'
-#    - cron: '35 0 * * *'
-#    - cron: '5 1 * * *'
-#  workflow_dispatch:
-#
-#jobs:
-#  check-dates:
-#    runs-on: ubuntu-latest
-#    steps:
-#      - uses: actions/checkout@v4
-#
-#      - name: Set up Python
-#        uses: actions/setup-python@v5
-#        with:
-#          python-version: '3.9'
-#
-#      - name: Install dependencies
-#        run: |
-#          python -m pip install --upgrade pip
-#          pip install pandas gspread google-auth gspread_dataframe
-#
-#      - name: Write service account file
-#        run: |
-#          echo '${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}' > creds.json
-#
-#      - name: Run date consistency check
-#        env:
-#          GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/creds.json
-#          MARKET_INPUT_URL: "https://docs.google.com/spreadsheets/d/17SMA52gIOkjFan-0au_YJEAxoWIzoNA84qlmgoTsZ-s/edit#gid=1037340594"
-#          MARKET_DATA_URL: "https://docs.google.com/spreadsheets/d/19Rj7iW5xWOe6ZJJRsO9VzsZXyLfFu1S_vtClEE_3DEw/edit#gid=748449431"
-#          HOLDING_SHEET_NAME: "holding_information"
-#        run: |
-#          python scripts/check_gsheets_dates.py
-#
-#      - name: Upload mismatch report (if any)
-#        if: always()
-#        uses: actions/upload-artifact@v4
-#        with:
-#          name: mismatch-report
-#          path: mismatch_report.md
-#          if-no-files-found: ignore
-#
-#      # Optional email (enable only if SMTP secrets are set)
-#      - name: Send email on mismatch
-#        if: failure()
-#        uses: dawidd6/action-send-mail@v3
-#        with:
-#          server_address: ${{ secrets.SMTP_HOST }}
-#          server_port: ${{ secrets.SMTP_PORT }}
-#          username: ${{ secrets.SMTP_USERNAME }}
-#          password: ${{ secrets.SMTP_PASSWORD }}
-#          subject: "[Anan Capital] Google Sheet date mismatch detected"
-#          to: ${{ secrets.EMAIL_TO }}
-#          from: ${{ secrets.EMAIL_FROM }}
-#          secure: true
-#          body: |
-#            A date mismatch was detected across symbols.
-#            See attached report or GitHub job logs.
-#          attachments: mismatch_report.md
+name: Validate Google Sheet Dates
+
+on:
+  workflow_run:
+    workflows: ["Automated Python 1"]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check-dates:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pandas gspread google-auth gspread_dataframe
+
+      # Option A: write creds to a file (matches your main.yml style)
+      - name: Write service account file
+        run: |
+          echo '${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}' > creds.json
+
+      - name: Run date consistency check
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/creds.json
+          MARKET_INPUT_URL: "https://docs.google.com/spreadsheets/d/17SMA52gIOkjFan-0au_YJEAxoWIzoNA84qlmgoTsZ-s/edit#gid=1037340594"
+          MARKET_DATA_URL: "https://docs.google.com/spreadsheets/d/19Rj7iW5xWOe6ZJJRsO9VzsZXyLfFu1S_vtClEE_3DEw/edit#gid=748449431"
+          HOLDING_SHEET_NAME: "holding_information"
+        run: |
+          python scripts/check_gsheets_dates.py
+
+      - name: Upload mismatch report (always)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mismatch-report
+          path: mismatch_report.md
+          if-no-files-found: warn
+
+      # OPTIONAL: email on mismatch (requires SMTP secrets)
+      - name: Send email on mismatch
+        if: failure()
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: ${{ secrets.SMTP_HOST }}
+          server_port: ${{ secrets.SMTP_PORT }}
+          username: ${{ secrets.SMTP_USERNAME }}
+          password: ${{ secrets.SMTP_PASSWORD }}
+          subject: "[Anan Capital] Google Sheet date mismatch detected"
+          to: ${{ secrets.EMAIL_TO }}
+          from: ${{ secrets.EMAIL_FROM }}
+          secure: true
+          body: |
+            A date mismatch was detected across symbols.
+            See the attached report or the GitHub job logs.
+          attachments: mismatch_report.md
