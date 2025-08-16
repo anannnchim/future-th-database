@@ -5,21 +5,32 @@ import os
 import sys
 import gspread
 import pandas as pd
-from google.oauth2 import service_account  # ✅ modern auth
+from oauth2client.service_account import ServiceAccountCredentials
 
-# --- Config (URLs only; creds come from env like your working script) ---
+# --- Config (adjust paths/URLs as needed) ---
+
 MARKET_INPUT_URL = "https://docs.google.com/spreadsheets/d/17SMA52gIOkjFan-0au_YJEAxoWIzoNA84qlmgoTsZ-s/edit#gid=1037340594"
 MARKET_DATA_URL  = "https://docs.google.com/spreadsheets/d/19Rj7iW5xWOe6ZJJRsO9VzsZXyLfFu1S_vtClEE_3DEw/edit#gid=748449431"
 HOLDING_SHEET_NAME = "holding_information"
 
 SCOPES = ['https://spreadsheets.google.com/feeds','https://www.googleapis.com/auth/drive']
 
+
+
+SERVICE_ACCOUNT_FILE = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+
+# RUN LOCALLY
+# def auth_client():
+#     # Run locally
+#     SVC_KEY_PATH = "/Users/nanthawat/Desktop/key/google/system-f1-th/automated-system-f1-th-key.json"
+#     creds = ServiceAccountCredentials.from_json_keyfile_name(SVC_KEY_PATH, SCOPES)
+#     return gspread.authorize(creds)
+
+# RUN BY GITHUB
 def auth_client():
-    svc_key_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
-    if not svc_key_path or not os.path.exists(svc_key_path):
-        print("GOOGLE_APPLICATION_CREDENTIALS is missing or file not found.", file=sys.stderr)
-        sys.exit(2)
-    creds = service_account.Credentials.from_service_account_file(svc_key_path, scopes=SCOPES)
+    # Run locally
+    SERVICE_ACCOUNT_FILE = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+    creds = ServiceAccountCredentials.from_json_keyfile_name(SERVICE_ACCOUNT_FILE, SCOPES)
     return gspread.authorize(creds)
 
 def get_tickers(client):
@@ -28,10 +39,13 @@ def get_tickers(client):
     df = pd.DataFrame(ws.get_all_records())
     if df.empty:
         raise ValueError("holding_information sheet is empty")
-    df.columns = [c.strip().lower() for c in df.columns]
+    # accept either 'ticker' or 'current_symbol'
+    cols = [c.strip().lower() for c in df.columns]
+    df.columns = cols
     if "ticker" in df.columns:
         tickers = df["ticker"].astype(str)
     elif "current_symbol" in df.columns:
+        # derive ticker by trimming last 3 chars (ABC25 -> ABC)
         tickers = df["current_symbol"].astype(str).apply(lambda s: s[:-3] if len(s) >= 3 else s)
     else:
         raise ValueError("holding_information must have 'ticker' or 'current_symbol'")
@@ -40,13 +54,15 @@ def get_tickers(client):
 
 def last_date_for_ticker(client, ticker):
     sh = client.open_by_url(MARKET_DATA_URL)
-    ws = sh.worksheet(ticker)
+    ws = sh.worksheet(ticker)   # raises if missing -> caller will handle
     df = pd.DataFrame(ws.get_all_records())
     if df.empty or "date" not in df.columns:
         return None
+    # keep non-empty dates
     df = df[df["date"].astype(str).str.len() > 0].copy()
     if df.empty:
         return None
+    # parse YYYY-MM-DD
     df["date"] = pd.to_datetime(df["date"], format="%Y-%m-%d", errors="coerce")
     df = df.dropna(subset=["date"])
     if df.empty:
@@ -67,15 +83,18 @@ def main():
 
     res_df = pd.DataFrame(results)
 
+    # show per-ticker last date
     print("\n=== Latest date per ticker ===")
     for _, r in res_df.iterrows():
         ld = r["last_date"].strftime("%Y-%m-%d") if pd.notna(r["last_date"]) else "None"
         print(f"{r['ticker']}: {ld}" + (f"  [ERROR: {r['error']}]" if r['error'] else ""))
 
+    # expected max date across tickers with data
     valid = res_df.dropna(subset=["last_date"])
     max_date = valid["last_date"].max() if not valid.empty else None
     print("\nExpected (max) date:", max_date.strftime("%Y-%m-%d") if max_date else "N/A")
 
+    # find mismatches
     mismatches = []
     for _, r in res_df.iterrows():
         if r["error"]:
