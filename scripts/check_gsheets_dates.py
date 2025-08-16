@@ -8,15 +8,29 @@ import pandas as pd
 from oauth2client.service_account import ServiceAccountCredentials
 
 # --- Config (adjust paths/URLs as needed) ---
-SVC_KEY_PATH = "/Users/nanthawat/Desktop/key/google/system-f1-th/automated-system-f1-th-key.json"
+
 MARKET_INPUT_URL = "https://docs.google.com/spreadsheets/d/17SMA52gIOkjFan-0au_YJEAxoWIzoNA84qlmgoTsZ-s/edit#gid=1037340594"
 MARKET_DATA_URL  = "https://docs.google.com/spreadsheets/d/19Rj7iW5xWOe6ZJJRsO9VzsZXyLfFu1S_vtClEE_3DEw/edit#gid=748449431"
 HOLDING_SHEET_NAME = "holding_information"
 
 SCOPES = ['https://spreadsheets.google.com/feeds','https://www.googleapis.com/auth/drive']
 
+
+
+SERVICE_ACCOUNT_FILE = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+
+# RUN LOCALLY
+# def auth_client():
+#     # Run locally
+#     SVC_KEY_PATH = "/Users/nanthawat/Desktop/key/google/system-f1-th/automated-system-f1-th-key.json"
+#     creds = ServiceAccountCredentials.from_json_keyfile_name(SVC_KEY_PATH, SCOPES)
+#     return gspread.authorize(creds)
+
+# RUN BY GITHUB
 def auth_client():
-    creds = ServiceAccountCredentials.from_json_keyfile_name(SVC_KEY_PATH, SCOPES)
+    # Run locally
+    SERVICE_ACCOUNT_FILE = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+    creds = ServiceAccountCredentials.from_json_keyfile_name(SERVICE_ACCOUNT_FILE, SCOPES)
     return gspread.authorize(creds)
 
 def get_tickers(client):
