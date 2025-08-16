@@ -35,16 +35,7 @@ jobs:
 
     - name: Run Automated script
       run: python manual-system-f1-th-ver2.py # THIS WORK!.
-      
-    # - name: Run backup S50 script
-    #   run: python automate-S50.py   
 
-    # - name: Run backup USD script
-    #   run: python automate-USD.py    
-
-    # - name: Run backup GF10 script
-    #   run: python automate-GF10.py   
-      
     - name: Commit files
       run: |
         git config --local user.name actions-user
