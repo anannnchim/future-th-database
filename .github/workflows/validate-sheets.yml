@@ -1,11 +1,12 @@
 name: Validate Google Sheet Dates
 
 on:
-  workflow_run:
-    workflows: ["Automated Python 1"]
-    types: [completed]
-  workflow_dispatch:
-
+#  workflow_run:
+#    workflows: ["Automated Python 1"]
+#    types: [completed]
+#  workflow_dispatch:
+  schedule:
+    - cron: '30 1 * * *'  # This run 30 mins after main
 permissions:
   contents: read
 
@@ -68,3 +69,5 @@ jobs:
             A date mismatch was detected across symbols.
             See the attached report or the GitHub job logs.
           attachments: mismatch_report.md
+
+# New version: https://chatgpt.com/g/g-p-675cea3ad94c8191be53cc7eef529721-anan-capital/c/689ff6f0-db0c-832b-91fa-424224d9854d
