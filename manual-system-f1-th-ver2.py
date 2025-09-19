@@ -153,50 +153,106 @@ def scrape_from_tfex(symbol):
 
         
 
+# def prep_df(raw_df):
+#     """
+#     Transforms the input DataFrame to:
+#     - Convert 'Date' to datetime format.
+#     - Convert financial figures from string to float, handling commas and currency.
+#     - Remove 'Chg' and '%Chg' columns.
+#     - Rename columns appropriately.
+#     - Sort data from the most recent to the earliest.
+#
+#     Parameters:
+#     raw_df (pd.DataFrame): The original DataFrame with financial time series data.
+#
+#     Returns:
+#     pd.DataFrame: Transformed DataFrame with cleaned and formatted columns.
+#     """
+#     # Convert 'Date' to datetime
+#     raw_df['Date'] = pd.to_datetime(raw_df['Date'], format='%d %b %Y')
+#
+#
+#     # Convert 'Open' to 'SP' and 'Vol (Contract)', 'OI (Contract)' from string to numeric
+#     financial_cols = ['Open', 'High', 'Low', 'Close', 'SP', 'Vol (Contract)', 'OI (Contract)']
+#     for col in financial_cols:
+#         raw_df[col] = pd.to_numeric(raw_df[col].replace(',', '', regex=True))
+#
+#     # Select and rename necessary columns
+#     raw_df = raw_df.rename(columns={
+#         'Date': 'date',
+#         'Open': 'open',
+#         'High': 'high',
+#         'Low': 'low',
+#         'Close': 'close',
+#         'SP': 'sp',
+#         'Vol (Contract)': 'vol',
+#         'OI (Contract)': 'oi',
+#         'Symbol': 'symbol'
+#     })
+#
+#     # Drop unnecessary columns
+#     raw_df = raw_df.drop(['Chg', '%Chg'], axis=1)
+#
+#     # Sort by 'date' descending
+#     raw_df = raw_df.sort_values(by='date', ascending=True)
+#
+#     return raw_df[['date', 'open', 'high', 'low', 'close', 'sp', 'vol', 'oi', 'symbol']]
+
+# New modified one
 def prep_df(raw_df):
     """
-    Transforms the input DataFrame to:
-    - Convert 'Date' to datetime format.
-    - Convert financial figures from string to float, handling commas and currency.
-    - Remove 'Chg' and '%Chg' columns.
-    - Rename columns appropriately.
-    - Sort data from the most recent to the earliest.
-
-    Parameters:
-    raw_df (pd.DataFrame): The original DataFrame with financial time series data.
-
-    Returns:
-    pd.DataFrame: Transformed DataFrame with cleaned and formatted columns.
+    Clean and normalize TFEX table:
+    - Parse dates
+    - Convert numeric columns (handling commas and dashes)
+    - Drop unusable rows
+    - Rename columns and sort ascending by date
     """
-    # Convert 'Date' to datetime
-    raw_df['Date'] = pd.to_datetime(raw_df['Date'], format='%d %b %Y')
-    
-    
-    # Convert 'Open' to 'SP' and 'Vol (Contract)', 'OI (Contract)' from string to numeric
-    financial_cols = ['Open', 'High', 'Low', 'Close', 'SP', 'Vol (Contract)', 'OI (Contract)']
+    import pandas as pd
+
+    # Short-circuit if nothing to do
+    if raw_df is None or raw_df.empty:
+        return pd.DataFrame()
+
+    # Work on a copy; treat "-" as missing
+    raw_df = raw_df.copy().replace("-", pd.NA)
+
+    # Parse date (coerce invalid to NaT)
+    raw_df["Date"] = pd.to_datetime(raw_df["Date"], format="%d %b %Y", errors="coerce")
+
+    # Convert numeric fields (remove commas; coerce invalid to NaN)
+    financial_cols = ["Open", "High", "Low", "Close", "SP", "Vol (Contract)", "OI (Contract)"]
     for col in financial_cols:
-        raw_df[col] = pd.to_numeric(raw_df[col].replace(',', '', regex=True))
-    
-    # Select and rename necessary columns
+        if col in raw_df.columns:
+            raw_df[col] = pd.to_numeric(
+                raw_df[col].astype(str).str.replace(",", ""),
+                errors="coerce"
+            )
+
+    # Rename to snake_case
     raw_df = raw_df.rename(columns={
-        'Date': 'date',
-        'Open': 'open',
-        'High': 'high',
-        'Low': 'low',
-        'Close': 'close',
-        'SP': 'sp',
-        'Vol (Contract)': 'vol',
-        'OI (Contract)': 'oi',
-        'Symbol': 'symbol'
+        "Date": "date",
+        "Open": "open",
+        "High": "high",
+        "Low": "low",
+        "Close": "close",
+        "SP": "sp",
+        "Vol (Contract)": "vol",
+        "OI (Contract)": "oi",
+        "Symbol": "symbol",
     })
 
-    # Drop unnecessary columns
-    raw_df = raw_df.drop(['Chg', '%Chg'], axis=1)
-    
-    # Sort by 'date' descending
-    raw_df = raw_df.sort_values(by='date', ascending=True)
+    # Drop columns that aren't needed if present
+    raw_df = raw_df.drop(columns=["Chg", "%Chg"], errors="ignore")
 
-    return raw_df[['date', 'open', 'high', 'low', 'close', 'sp', 'vol', 'oi', 'symbol']]
+    # Keep only usable rows (need a date and a settlement price)
+    raw_df = raw_df.dropna(subset=["date", "sp"])
+
+    # Sort oldest->newest
+    raw_df = raw_df.sort_values(by="date", ascending=True)
+
+    # Return with a stable column order (missing cols will appear as NaN)
+    cols = ["date", "open", "high", "low", "close", "sp", "vol", "oi", "symbol"]
+    return raw_df.reindex(columns=cols)
 
 
 
@@ -261,12 +317,21 @@ for symbol in holding_information['current_symbol']:
     raw_df = scrape_from_tfex(symbol)
     df = prep_df(raw_df)
 
+    # NEW ---
+    if df is None or df.empty:
+        print(f"2b - Scrape returned no usable rows for {symbol}, skipping.")
+        continue
+    # END ---
     print("2 - Finish: Scrape data from website")
 
     
     # Check whether database is already updated or not
-    if prev_backadj_df['date'].tail(1).item() == df['date'].tail(1).item():
-        
+    # if prev_backadj_df['date'].tail(1).item() == df['date'].tail(1).item():
+
+    # NEW ---
+    if not prev_backadj_df.empty and not df.empty and \
+            prev_backadj_df['date'].tail(1).item() == df['date'].tail(1).item():
+    # END ---
         # Already update
         print("3 - Database is already updated")
         
