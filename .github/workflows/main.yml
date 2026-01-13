@@ -2,7 +2,7 @@ name: Automated Python 1
 
 on:
   push:
-    branches: # adjust
+    branches: # adjust, 
       - main
   schedule:
     - cron: '0 21 * * *' # This is 05:00 AM Thailand time (UTC+7+1) in UTC time test
