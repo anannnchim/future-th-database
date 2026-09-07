@@ -37,7 +37,6 @@ For automation:
 import gspread
 import pandas as pd
 import selenium
-from oauth2client.service_account import ServiceAccountCredentials
 from concurrent.futures import ThreadPoolExecutor
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
