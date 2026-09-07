@@ -47,6 +47,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 from gspread_dataframe import set_with_dataframe
 import os
 import sys
+import time
 from google.oauth2.service_account import Credentials
 import json
 from google.oauth2 import service_account
@@ -258,6 +259,31 @@ def prep_df(raw_df):
 
 
 
+def scrape_prepared(symbol, attempts=3):
+    """Retry a full TFEX page load when its dynamic table is empty."""
+    last_error = None
+    for attempt in range(1, attempts + 1):
+        try:
+            frame = prep_df(scrape_from_tfex(symbol))
+            if not frame.empty:
+                return frame
+            last_error = RuntimeError("dynamic table returned no usable rows")
+        except Exception as exc:
+            last_error = exc
+
+        if attempt < attempts:
+            delay = attempt * 5
+            print(
+                f"{symbol}: scrape attempt {attempt}/{attempts} failed "
+                f"({last_error}); retrying in {delay}s"
+            )
+            time.sleep(delay)
+
+    raise RuntimeError(
+        f"scrape failed after {attempts} attempts for {symbol}: {last_error}"
+    )
+
+
 # global variables
 scope = ['https://spreadsheets.google.com/feeds','https://www.googleapis.com/auth/drive']
 market_input_url = 'https://docs.google.com/spreadsheets/d/17SMA52gIOkjFan-0au_YJEAxoWIzoNA84qlmgoTsZ-s/edit?gid=1037340594#gid=1037340594'
@@ -327,9 +353,7 @@ def update_symbol(market_data_sheet, symbol):
         raise ValueError(f"{ticker} has no existing continuous-series data")
 
     print(f"{symbol}: downloaded {len(previous)} existing rows")
-    scraped = prep_df(scrape_from_tfex(symbol))
-    if scraped.empty:
-        raise RuntimeError(f"scrape returned no usable rows for {symbol}")
+    scraped = scrape_prepared(symbol)
 
     scraped_latest = scraped["date"].max()
     stored_latest = previous["date"].max()
@@ -366,7 +390,7 @@ def update_symbol(market_data_sheet, symbol):
             return
 
         first_new_date = new_rows["date"].min()
-        previous_contract = prep_df(scrape_from_tfex(last_symbol))
+        previous_contract = scrape_prepared(last_symbol)
         matching_old = previous_contract[previous_contract["date"] == first_new_date]
         if matching_old.empty:
             raise RuntimeError(
