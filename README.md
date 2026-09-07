@@ -14,7 +14,7 @@ The `Update F1-TH market data` workflow:
 - preserves continuous-series back-adjustment when a contract rolls;
 - reads each worksheet back after writing and fails if verification does not match.
 
-The workflow is defined in `.github/workflows/main.yml` and runs
+The workflow is defined in `.github/workflows/update-market-data.yml` and runs
 `manual-system-f1-th-ver2.py`.
 
 ## Validation
