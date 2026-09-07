@@ -47,6 +47,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 from gspread_dataframe import set_with_dataframe
 import os
+import sys
 from google.oauth2.service_account import Credentials
 import json
 from google.oauth2 import service_account
@@ -74,7 +75,7 @@ def scrape_from_tfex(symbol):
         driver.get(url)
         
         # Use WebDriverWait to wait for the table to be loaded
-        wait = WebDriverWait(driver, 1000)  # Timeout after 10 seconds
+        wait = WebDriverWait(driver, 60)
         table_element = wait.until(EC.visibility_of_element_located((By.XPATH, xpath)))
 
         # Extract the rows using a more specific XPath to directly access the cells
@@ -117,7 +118,7 @@ def scrape_from_tfex(symbol):
     data = []
     try:
         driver.get(url)
-        wait = WebDriverWait(driver, 1000)
+        wait = WebDriverWait(driver, 60)
         table_element = wait.until(EC.visibility_of_element_located((By.XPATH, xpath)))
 
         retries = 20  # Number of retries for fetching rows
@@ -263,132 +264,162 @@ scope = ['https://spreadsheets.google.com/feeds','https://www.googleapis.com/aut
 market_input_url = 'https://docs.google.com/spreadsheets/d/17SMA52gIOkjFan-0au_YJEAxoWIzoNA84qlmgoTsZ-s/edit?gid=1037340594#gid=1037340594'
 market_data_url = 'https://docs.google.com/spreadsheets/d/19Rj7iW5xWOe6ZJJRsO9VzsZXyLfFu1S_vtClEE_3DEw/edit?gid=748449431#gid=748449431'
 
-##### 2. Set up onece ------------------------------------
+##### 2. Set up once ------------------------------------
 
 # 1: Authentication (manually)
 #json_keyfile_path = '/Users/nanthawat/Desktop/key/google/system-f1-th/automated-system-f1-th-key.json'
 #creds = ServiceAccountCredentials.from_json_keyfile_name(json_keyfile_path, scope)
 #client = gspread.authorize(creds)
 
-# 2: Authentication (Github Action)
-SERVICE_ACCOUNT_FILE = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
-creds = service_account.Credentials.from_service_account_file( SERVICE_ACCOUNT_FILE, scopes=scope)
-client = gspread.authorize(creds)
+# 2: Authentication (GitHub Action)
+def authenticated_client():
+    service_account_file = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+    if not service_account_file:
+        raise RuntimeError("GOOGLE_APPLICATION_CREDENTIALS is not set")
+    credentials = service_account.Credentials.from_service_account_file(
+        service_account_file,
+        scopes=scope,
+    )
+    return gspread.authorize(credentials)
 
-# Get sheet from url
-market_input_sheet = client.open_by_url(market_input_url)
-#market_data_sheet = client.open_by_url(market_data_url)
-
-# Access a specific worksheet by name or by index
-holding_information = market_input_sheet.worksheet('holding_information')
-holding_information = pd.DataFrame(holding_information.get_all_records()) 
-
-##### 3. loop through each symbol ------------------------------------
+DATA_COLUMNS = [
+    "date", "open", "high", "low", "close",
+    "sp", "vol", "oi", "symbol", "adj_price",
+]
 
 
+def load_existing(worksheet):
+    frame = pd.DataFrame(worksheet.get_all_records())
+    if frame.empty:
+        return pd.DataFrame(columns=DATA_COLUMNS)
+    if "date" not in frame.columns or "symbol" not in frame.columns:
+        raise ValueError(f"{worksheet.title} is missing required date/symbol columns")
+    frame["date"] = pd.to_datetime(frame["date"], format="%Y-%m-%d", errors="coerce")
+    frame = frame.dropna(subset=["date"]).copy()
+    return frame.reindex(columns=DATA_COLUMNS)
 
-for symbol in holding_information['current_symbol']:
-    
-    
-    # 1: Authentication (manually)
-    #json_keyfile_path = '/Users/nanthawat/Desktop/key/google/system-f1-th/automated-system-f1-th-key.json'
-    #creds = ServiceAccountCredentials.from_json_keyfile_name(json_keyfile_path, scope)
-    #client = gspread.authorize(creds)
-    
-    # (Github action)
-    SERVICE_ACCOUNT_FILE = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
-    creds = service_account.Credentials.from_service_account_file( SERVICE_ACCOUNT_FILE, scopes=scope)
-    client = gspread.authorize(creds)
-    
-    market_data_sheet = client.open_by_url(market_data_url)
 
-    # START 
-    ticker = symbol[:-3] # Change back to -3 
-    print(symbol)
-    
-    # Import data form googlesheet
-    sheet = market_data_sheet.worksheet(ticker)
-    data = sheet.get_all_records()
-    prev_backadj_df = pd.DataFrame(data)
-    prev_backadj_df['date'] = pd.to_datetime(prev_backadj_df['date'], format='%Y-%m-%d')
-    print("1 - Finish: Download data from googlesheet ")
-    
-    # Scrape data from website
-    raw_df = scrape_from_tfex(symbol)
-    df = prep_df(raw_df)
+def write_and_verify(worksheet, frame, expected_latest_date):
+    output = frame.reindex(columns=DATA_COLUMNS).copy()
+    output["date"] = output["date"].dt.strftime("%Y-%m-%d")
+    output = output.where(pd.notna(output), "")
+    set_with_dataframe(
+        worksheet,
+        output,
+        include_index=False,
+        include_column_header=True,
+        resize=True,
+    )
 
-    # NEW ---
-    if df is None or df.empty:
-        print(f"2b - Scrape returned no usable rows for {symbol}, skipping.")
-        continue
-    # END ---
-    print("2 - Finish: Scrape data from website")
+    readback = load_existing(worksheet)
+    actual_latest_date = readback["date"].max() if not readback.empty else None
+    if actual_latest_date != expected_latest_date:
+        raise RuntimeError(
+            f"{worksheet.title} verification failed: "
+            f"expected {expected_latest_date:%Y-%m-%d}, got {actual_latest_date}"
+        )
 
-    
-    # Check whether database is already updated or not
-    # if prev_backadj_df['date'].tail(1).item() == df['date'].tail(1).item():
 
-    # NEW ---
-    if not prev_backadj_df.empty and not df.empty and \
-            prev_backadj_df['date'].tail(1).item() == df['date'].tail(1).item():
-    # END ---
-        # Already update
-        print("3 - Database is already updated")
-        
-        # Store data 
-        prev_backadj_df['date'] = prev_backadj_df['date'].dt.strftime('%Y-%m-%d')
-        # prev_backadj_df.to_parquet(ticker + '.parquet',  engine='pyarrow')
-    
+def update_symbol(market_data_sheet, symbol):
+    ticker = symbol[:-3]
+    worksheet = market_data_sheet.worksheet(ticker)
+    previous = load_existing(worksheet)
+    if previous.empty:
+        raise ValueError(f"{ticker} has no existing continuous-series data")
+
+    print(f"{symbol}: downloaded {len(previous)} existing rows")
+    scraped = prep_df(scrape_from_tfex(symbol))
+    if scraped.empty:
+        raise RuntimeError(f"scrape returned no usable rows for {symbol}")
+
+    scraped_latest = scraped["date"].max()
+    stored_latest = previous["date"].max()
+    last_symbol = str(previous.sort_values("date")["symbol"].iloc[-1])
+    print(
+        f"{symbol}: stored={stored_latest:%Y-%m-%d}, "
+        f"source={scraped_latest:%Y-%m-%d}"
+    )
+
+    if last_symbol == symbol:
+        if scraped_latest < stored_latest:
+            print(f"{symbol}: source is older than the sheet; preserving sheet data")
+            return
+
+        # Refresh dates exposed by TFEX and append every missing date. This also
+        # replaces an intraday snapshot with the final settlement on a later run.
+        current_start = previous.loc[previous["symbol"] == symbol, "date"].min()
+        replacement = scraped[scraped["date"] >= current_start].copy()
+        replacement["adj_price"] = replacement["sp"]
+        replacement_dates = set(replacement["date"])
+        keep = previous[
+            ~(
+                (previous["symbol"] == symbol)
+                & previous["date"].isin(replacement_dates)
+            )
+        ]
+        updated = pd.concat([keep, replacement], ignore_index=True)
     else:
-        
-        # Check whether we have rolled the contract or not
-        if prev_backadj_df['symbol'].tail(1).item() == symbol:
-            
-            # append new data normally
-            df['adj_price'] = df['sp']
-            prev_backadj_df = pd.concat([prev_backadj_df, df.tail(1)])
-        else:
-            # append new data normally
-            df['adj_price'] = df['sp']
-            prev_backadj_df = pd.concat([prev_backadj_df, df.tail(1)])
-            
-            # Get data from previous month
-            prev_symbol = prev_backadj_df['symbol'].iloc[-2]
-            
-            raw_df_prev = scrape_from_tfex(prev_symbol)
-            # if raw_df_prev is empty then retry it 3 times then continue 
-            prev_df = prep_df(raw_df_prev)
-            
-            # Calculate the different
-            different = prev_backadj_df['sp'].tail(1).item()  - prev_df['sp'].tail(1).item()
-            
-            # Backadjusting price except the last one
-            prev_backadj_df.iloc[:-1, prev_backadj_df.columns.get_loc('adj_price')] = prev_backadj_df.iloc[:-1, prev_backadj_df.columns.get_loc('adj_price')] + different
-            
+        # On a roll, add every date missing during downtime, and calculate the
+        # back-adjustment on the first new date shared by both contracts.
+        new_rows = scraped[scraped["date"] > stored_latest].copy()
+        if new_rows.empty:
+            print(f"{symbol}: waiting for the first completed row after contract roll")
+            return
 
-        # Reformat data
-        prev_backadj_df['date'] = prev_backadj_df['date'].dt.strftime('%Y-%m-%d')
-        
-        
-        # Rewrite data on googlesheet
-        market_data_sheet = client.open_by_url(market_data_url)
-        worksheet = market_data_sheet.worksheet(ticker)
-        
-        prev_backadj_df = prev_backadj_df.dropna(how='any') # ADDD
+        first_new_date = new_rows["date"].min()
+        previous_contract = prep_df(scrape_from_tfex(last_symbol))
+        matching_old = previous_contract[previous_contract["date"] == first_new_date]
+        if matching_old.empty:
+            raise RuntimeError(
+                f"cannot back-adjust {symbol}: {last_symbol} has no row for "
+                f"{first_new_date:%Y-%m-%d}"
+            )
 
-        set_with_dataframe(worksheet, prev_backadj_df, include_index=False, include_column_header=True, resize=True)
-        
-        print("3 - Finish: Update googlesheet")
-        
-        # store data
-        # prev_backadj_df.to_parquet(ticker + '.parquet', engine='pyarrow')
+        adjustment = (
+            new_rows.loc[new_rows["date"] == first_new_date, "sp"].iloc[-1]
+            - matching_old["sp"].iloc[-1]
+        )
+        previous["adj_price"] = (
+            pd.to_numeric(previous["adj_price"], errors="coerce") + adjustment
+        )
+        new_rows["adj_price"] = new_rows["sp"]
+        updated = pd.concat([previous, new_rows], ignore_index=True)
 
-    print("4 - All done.")     
-        
+    updated = (
+        updated.drop_duplicates(subset=["date"], keep="last")
+        .sort_values("date")
+        .reset_index(drop=True)
+    )
+    write_and_verify(worksheet, updated, max(stored_latest, scraped_latest))
+    print(f"{symbol}: sheet updated and verified")
 
 
+def main():
+    client = authenticated_client()
+    market_input_sheet = client.open_by_url(market_input_url)
+    holding_worksheet = market_input_sheet.worksheet("holding_information")
+    holding_information = pd.DataFrame(holding_worksheet.get_all_records())
+    if holding_information.empty or "current_symbol" not in holding_information:
+        raise ValueError("holding_information has no current_symbol values")
+
+    market_data_sheet = client.open_by_url(market_data_url)
+    failures = []
+    for symbol in holding_information["current_symbol"].dropna().astype(str):
+        try:
+            update_symbol(market_data_sheet, symbol.strip())
+        except Exception as exc:
+            failures.append(f"{symbol}: {exc}")
+            print(f"ERROR: {failures[-1]}")
+
+    if failures:
+        print("\nUpdate failed for one or more symbols:")
+        for failure in failures:
+            print(f"- {failure}")
+        return 1
+
+    print("All symbols updated and verified successfully.")
+    return 0
 
 
-
-        
-        
+if __name__ == "__main__":
+    sys.exit(main())
