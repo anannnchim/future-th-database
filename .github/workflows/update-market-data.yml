@@ -6,9 +6,9 @@ on:
     branches:
       - main
   schedule:
-    # 11:30 Asia/Bangkok, Monday-Saturday. Saturday captures Friday's
+    # 07:30 Asia/Bangkok, Monday-Saturday. Saturday captures Friday's
     # completed night session without spending five runs per day.
-    - cron: '30 4 * * 1-6'
+    - cron: '30 0 * * 1-6'
 
 permissions:
   contents: read
