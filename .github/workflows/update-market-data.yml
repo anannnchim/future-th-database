@@ -6,8 +6,10 @@ on:
     branches:
       - main
   schedule:
-    # 07:30 Asia/Bangkok, Monday-Saturday. Saturday captures Friday's
-    # completed night session without spending five runs per day.
+    # Primary: 03:07 Asia/Bangkok, Monday-Saturday. This compensates for
+    # observed GitHub scheduling delays while avoiding the top of the hour.
+    - cron: '7 20 * * 0-5'
+    # Fallback: 07:30 Asia/Bangkok, Monday-Saturday.
     - cron: '30 0 * * 1-6'
 
 permissions:
