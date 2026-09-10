@@ -1,0 +1,4 @@
+# Extra TFEX/SET closure dates not already covered by Thailand public holidays.
+# Add one ISO date per line, review annually against the official exchange calendar.
+# Example:
+# 2027-01-04

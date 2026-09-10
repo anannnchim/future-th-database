@@ -2,29 +2,40 @@
 
 This repository updates the Google Sheets market database used by System F1-TH.
 
-## Automated update
+## Production workflow
 
-The `Update F1-TH market data` workflow:
+`Update F1-TH market data` runs twice Monday-Saturday:
 
-- runs at 11:30 Asia/Bangkok, Monday through Saturday;
-- can also be started manually with `workflow_dispatch`;
-- reads the current contracts from the `holding_information` worksheet;
-- scrapes TFEX historical trading data;
-- refreshes current-contract rows and appends every missing date;
-- preserves continuous-series back-adjustment when a contract rolls;
-- reads each worksheet back after writing and fails if verification does not match.
+- primary: 03:07 Asia/Bangkok;
+- fallback: 07:30 Asia/Bangkok.
 
-The workflow is defined in `.github/workflows/update-market-data.yml` and runs
-`manual-system-f1-th-ver2.py`.
+It can also be run manually. The fallback is safe because the update is
+idempotent.
 
-## Validation
+A successful workflow means the complete chain is current:
 
-`.github/workflows/validate-sheets.yml` compares the latest stored date across
-all active F1-TH tickers and reports mismatches.
+1. determine the latest completed TFEX trading date;
+2. scrape and validate all active contracts before writing;
+3. update and read back all market-data tabs;
+4. wait for Automated F1 to recalculate;
+5. verify every Automated F1 instrument tab and `B-Monitoring`.
+
+The fallback run opens or updates a GitHub issue if the chain remains stale.
+A later successful run closes the issue automatically.
+
+## Trading calendar
+
+Thailand public holidays are supplied by the Python `holidays` package.
+Add exchange-only closure dates to `config/tfex_holidays.txt`, one ISO date per
+line, and review the file against the official TFEX/SET calendar annually.
+
+## Manual validation
+
+Run the `Validate F1-TH freshness` workflow to check both workbooks without
+updating data. Its report is available in the job summary and as an artifact.
 
 ## Contract rolls
 
-Update `current_symbol` in the `holding_information` worksheet when a
-contract changes. The updater detects that the stored symbol differs, obtains
-the overlapping old-contract settlement, applies the back-adjustment, and adds
-the new contract rows.
+Update `current_symbol` in the `holding_information` worksheet when a contract
+changes. The updater detects the new symbol, uses the overlapping old-contract
+settlement for the back-adjustment, and appends the new contract rows.
