@@ -113,8 +113,8 @@ def load_existing(worksheet):
     return frame.dropna(subset=["date"]).copy().reindex(columns=DATA_COLUMNS)
 
 
-def validate_series(frame, ticker):
-    """Reject data that could corrupt a continuous-series worksheet."""
+def validate_series(frame, ticker, allow_legacy_blank_symbols=False):
+    """Reject corrupt data while permitting explicitly acknowledged legacy gaps."""
     if frame.empty:
         raise ValueError(f"{ticker} has no rows to write")
     missing = set(DATA_COLUMNS) - set(frame.columns)
@@ -124,15 +124,16 @@ def validate_series(frame, ticker):
         raise ValueError(f"{ticker} has blank or duplicate dates")
     if not frame["date"].is_monotonic_increasing:
         raise ValueError(f"{ticker} dates are not ascending")
-    if frame["symbol"].astype(str).str.strip().eq("").any():
+    blank_symbols = frame["symbol"].isna() | frame["symbol"].astype(str).str.strip().eq("")
+    if blank_symbols.any() and not allow_legacy_blank_symbols:
         raise ValueError(f"{ticker} has blank contract symbols")
     for column in ("sp", "adj_price"):
         if pd.to_numeric(frame[column], errors="coerce").isna().any():
             raise ValueError(f"{ticker} has invalid {column} values")
 
 
-def write_and_verify(worksheet, frame, expected_latest_date):
-    validate_series(frame, worksheet.title)
+def write_and_verify(worksheet, frame, expected_latest_date, allow_legacy_blank_symbols=False):
+    validate_series(frame, worksheet.title, allow_legacy_blank_symbols)
     output = frame.reindex(columns=DATA_COLUMNS).copy()
     output["date"] = output["date"].dt.strftime("%Y-%m-%d")
     set_with_dataframe(worksheet, output.where(pd.notna(output), ""), include_index=False, include_column_header=True, resize=True)
@@ -152,8 +153,13 @@ def update_symbol(market_data_sheet, symbol, dry_run=False):
     previous = load_existing(worksheet)
     if previous.empty:
         raise ValueError(f"{ticker} has no existing continuous-series data")
-    validate_series(previous, ticker)
+    legacy_blank_symbols = previous["symbol"].isna() | previous["symbol"].astype(str).str.strip().eq("")
+    validate_series(previous, ticker, allow_legacy_blank_symbols=True)
+    if legacy_blank_symbols.any():
+        print(f"{symbol}: preserving {legacy_blank_symbols.sum()} legacy rows with blank contract symbols")
     scraped = scrape_prepared(symbol)
+    if scraped["symbol"].isna().any() or scraped["symbol"].astype(str).str.strip().eq("").any():
+        raise ValueError(f"{symbol}: TFEX returned blank contract symbols")
     stored_latest, scraped_latest = previous["date"].max(), scraped["date"].max()
     last_symbol = str(previous["symbol"].iloc[-1])
     print(f"{symbol}: stored={stored_latest:%Y-%m-%d}, source={scraped_latest:%Y-%m-%d}")
@@ -183,12 +189,17 @@ def update_symbol(market_data_sheet, symbol, dry_run=False):
         updated = pd.concat([previous, new_rows], ignore_index=True)
 
     updated = updated.drop_duplicates(subset=["date"], keep="last").sort_values("date").reset_index(drop=True)
-    validate_series(updated, ticker)
+    validate_series(updated, ticker, allow_legacy_blank_symbols=True)
     if dry_run:
         added = len(set(updated["date"]) - set(previous["date"]))
         print(f"{symbol}: DRY RUN validated {len(updated)} rows ({added} new); no sheet changes made")
         return
-    write_and_verify(worksheet, updated, max(stored_latest, scraped_latest))
+    write_and_verify(
+        worksheet,
+        updated,
+        max(stored_latest, scraped_latest),
+        allow_legacy_blank_symbols=True,
+    )
     print(f"{symbol}: sheet updated and verified")
 
 
