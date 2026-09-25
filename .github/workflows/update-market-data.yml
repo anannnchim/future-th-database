@@ -2,9 +2,12 @@ name: Update F1-TH market data
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
+    inputs:
+      dry_run:
+        description: "Validate live inputs and TFEX data without writing Google Sheets"
+        required: false
+        default: false
+        type: boolean
   schedule:
     # Primary: 03:07 Asia/Bangkok, Monday-Saturday. This compensates for
     # observed GitHub scheduling delays while avoiding the top of the hour.
@@ -32,11 +35,13 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: '3.12'
+        cache: pip
+        cache-dependency-path: requirements.txt
 
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install gspread google-auth pandas selenium webdriver-manager gspread_dataframe
+        python -m pip install -r requirements.txt
 
     - name: Authenticate to Google Cloud
       uses: google-github-actions/auth@v2
@@ -44,4 +49,11 @@ jobs:
         credentials_json: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }} 
 
     - name: Run Automated script
-      run: python manual-system-f1-th-ver2.py
+      env:
+        DRY_RUN: ${{ inputs.dry_run || 'false' }}
+      run: |
+        if [ "$DRY_RUN" = "true" ]; then
+          python manual-system-f1-th-ver2.py --dry-run
+        else
+          python manual-system-f1-th-ver2.py
+        fi

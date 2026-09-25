@@ -6,7 +6,7 @@ This repository updates the Google Sheets market database used by System F1-TH.
 
 The `Update F1-TH market data` workflow:
 
-- runs at 11:30 Asia/Bangkok, Monday through Saturday;
+- runs at 03:07 Asia/Bangkok, Monday through Saturday, with a 07:30 fallback;
 - can also be started manually with `workflow_dispatch`;
 - reads the current contracts from the `holding_information` worksheet;
 - scrapes TFEX historical trading data;
@@ -16,6 +16,35 @@ The `Update F1-TH market data` workflow:
 
 The workflow is defined in `.github/workflows/update-market-data.yml` and runs
 `manual-system-f1-th-ver2.py`.
+
+## Safe local checks
+
+Install the pinned production dependencies and run the offline regression suite:
+
+```bash
+python -m pip install -r requirements.txt
+python -m unittest discover -s tests -v
+```
+
+To validate the live inputs and TFEX data without changing any Google Sheet,
+set `GOOGLE_APPLICATION_CREDENTIALS` to the service-account JSON file and run:
+
+```bash
+python manual-system-f1-th-ver2.py --dry-run
+```
+
+The dry run performs the same data-quality and contract-roll checks as a
+production run, but never calls the worksheet write operation.
+
+The same check is available in GitHub Actions: select **Run workflow**, set
+**Dry run** to true, and review the job log. This uses the existing repository
+credential without needing to place a service-account file on a local machine.
+
+## Change policy
+
+Do not make direct edits to the continuous-series worksheets. Change active
+contracts only through `market-input`, review updater changes through a pull
+request, and use the dry run before merging changes that affect data logic.
 
 ## Validation
 

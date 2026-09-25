@@ -1,0 +1,7 @@
+# Production dependencies. Update deliberately in a pull request, with tests.
+google-auth==2.40.3
+gspread==6.2.1
+gspread-dataframe==4.0.0
+pandas==2.3.2
+selenium==4.35.0
+webdriver-manager==4.0.2
