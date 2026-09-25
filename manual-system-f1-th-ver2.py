@@ -135,7 +135,13 @@ def validate_series(frame, ticker, allow_legacy_blank_symbols=False, allow_legac
     sp_values = numeric_values(frame["sp"])
     adj_price_values = numeric_values(frame["adj_price"])
     invalid_sp = sp_values.isna()
-    if invalid_sp.any() and (not allow_legacy_missing_sp or adj_price_values[invalid_sp].isna().any()):
+    blank_sp = frame["sp"].isna() | frame["sp"].astype(str).str.strip().eq("")
+    invalid_nonblank_sp = invalid_sp & ~blank_sp
+    if invalid_sp.any() and (
+        not allow_legacy_missing_sp
+        or invalid_nonblank_sp.any()
+        or adj_price_values[invalid_sp].isna().any()
+    ):
         raise ValueError(f"{ticker} has invalid sp values")
     if adj_price_values.isna().any():
         raise ValueError(f"{ticker} has invalid adj_price values")
