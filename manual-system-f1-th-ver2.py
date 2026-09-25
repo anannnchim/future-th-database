@@ -113,7 +113,12 @@ def load_existing(worksheet):
     return frame.dropna(subset=["date"]).copy().reindex(columns=DATA_COLUMNS)
 
 
-def validate_series(frame, ticker, allow_legacy_blank_symbols=False):
+def numeric_values(series):
+    """Parse sheet numbers that may use thousands separators."""
+    return pd.to_numeric(series.astype("string").str.replace(",", "", regex=False), errors="coerce")
+
+
+def validate_series(frame, ticker, allow_legacy_blank_symbols=False, allow_legacy_missing_sp=False):
     """Reject corrupt data while permitting explicitly acknowledged legacy gaps."""
     if frame.empty:
         raise ValueError(f"{ticker} has no rows to write")
@@ -127,13 +132,17 @@ def validate_series(frame, ticker, allow_legacy_blank_symbols=False):
     blank_symbols = frame["symbol"].isna() | frame["symbol"].astype(str).str.strip().eq("")
     if blank_symbols.any() and not allow_legacy_blank_symbols:
         raise ValueError(f"{ticker} has blank contract symbols")
-    for column in ("sp", "adj_price"):
-        if pd.to_numeric(frame[column], errors="coerce").isna().any():
-            raise ValueError(f"{ticker} has invalid {column} values")
+    sp_values = numeric_values(frame["sp"])
+    adj_price_values = numeric_values(frame["adj_price"])
+    invalid_sp = sp_values.isna()
+    if invalid_sp.any() and (not allow_legacy_missing_sp or adj_price_values[invalid_sp].isna().any()):
+        raise ValueError(f"{ticker} has invalid sp values")
+    if adj_price_values.isna().any():
+        raise ValueError(f"{ticker} has invalid adj_price values")
 
 
-def write_and_verify(worksheet, frame, expected_latest_date, allow_legacy_blank_symbols=False):
-    validate_series(frame, worksheet.title, allow_legacy_blank_symbols)
+def write_and_verify(worksheet, frame, expected_latest_date, allow_legacy_blank_symbols=False, allow_legacy_missing_sp=False):
+    validate_series(frame, worksheet.title, allow_legacy_blank_symbols, allow_legacy_missing_sp)
     output = frame.reindex(columns=DATA_COLUMNS).copy()
     output["date"] = output["date"].dt.strftime("%Y-%m-%d")
     set_with_dataframe(worksheet, output.where(pd.notna(output), ""), include_index=False, include_column_header=True, resize=True)
@@ -154,9 +163,12 @@ def update_symbol(market_data_sheet, symbol, dry_run=False):
     if previous.empty:
         raise ValueError(f"{ticker} has no existing continuous-series data")
     legacy_blank_symbols = previous["symbol"].isna() | previous["symbol"].astype(str).str.strip().eq("")
-    validate_series(previous, ticker, allow_legacy_blank_symbols=True)
+    legacy_missing_sp = numeric_values(previous["sp"]).isna()
+    validate_series(previous, ticker, allow_legacy_blank_symbols=True, allow_legacy_missing_sp=True)
     if legacy_blank_symbols.any():
         print(f"{symbol}: preserving {legacy_blank_symbols.sum()} legacy rows with blank contract symbols")
+    if legacy_missing_sp.any():
+        print(f"{symbol}: preserving {legacy_missing_sp.sum()} legacy rows with settlement-price gaps")
     scraped = scrape_prepared(symbol)
     if scraped["symbol"].isna().any() or scraped["symbol"].astype(str).str.strip().eq("").any():
         raise ValueError(f"{symbol}: TFEX returned blank contract symbols")
@@ -188,12 +200,12 @@ def update_symbol(market_data_sheet, symbol, dry_run=False):
         if old_row.empty:
             raise RuntimeError(f"cannot back-adjust {symbol}: {last_symbol} has no row for {first_new_date:%Y-%m-%d}")
         adjustment = new_rows.loc[new_rows["date"] == first_new_date, "sp"].iloc[-1] - old_row["sp"].iloc[-1]
-        previous["adj_price"] = pd.to_numeric(previous["adj_price"], errors="coerce") + adjustment
+        previous["adj_price"] = numeric_values(previous["adj_price"]) + adjustment
         new_rows["adj_price"] = new_rows["sp"]
         updated = pd.concat([previous, new_rows], ignore_index=True)
 
     updated = updated.drop_duplicates(subset=["date"], keep="last").sort_values("date").reset_index(drop=True)
-    validate_series(updated, ticker, allow_legacy_blank_symbols=True)
+    validate_series(updated, ticker, allow_legacy_blank_symbols=True, allow_legacy_missing_sp=True)
     if dry_run:
         added = len(set(updated["date"]) - set(previous["date"]))
         print(f"{symbol}: DRY RUN validated {len(updated)} rows ({added} new); no sheet changes made")
@@ -203,6 +215,7 @@ def update_symbol(market_data_sheet, symbol, dry_run=False):
         updated,
         max(stored_latest, scraped_latest),
         allow_legacy_blank_symbols=True,
+        allow_legacy_missing_sp=True,
     )
     print(f"{symbol}: sheet updated and verified")
 
