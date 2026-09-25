@@ -2,6 +2,12 @@ name: Update F1-TH market data
 
 on:
   workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Validate live inputs and TFEX data without writing Google Sheets"
+        required: false
+        default: false
+        type: boolean
   schedule:
     # Primary: 03:07 Asia/Bangkok, Monday-Saturday. This compensates for
     # observed GitHub scheduling delays while avoiding the top of the hour.
@@ -43,4 +49,11 @@ jobs:
         credentials_json: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }} 
 
     - name: Run Automated script
-      run: python manual-system-f1-th-ver2.py
+      env:
+        DRY_RUN: ${{ inputs.dry_run || 'false' }}
+      run: |
+        if [ "$DRY_RUN" = "true" ]; then
+          python manual-system-f1-th-ver2.py --dry-run
+        else
+          python manual-system-f1-th-ver2.py
+        fi

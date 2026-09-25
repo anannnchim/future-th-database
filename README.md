@@ -36,6 +36,10 @@ python manual-system-f1-th-ver2.py --dry-run
 The dry run performs the same data-quality and contract-roll checks as a
 production run, but never calls the worksheet write operation.
 
+The same check is available in GitHub Actions: select **Run workflow**, set
+**Dry run** to true, and review the job log. This uses the existing repository
+credential without needing to place a service-account file on a local machine.
+
 ## Change policy
 
 Do not make direct edits to the continuous-series worksheets. Change active
