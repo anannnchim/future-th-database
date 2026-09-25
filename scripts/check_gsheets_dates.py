@@ -3,9 +3,9 @@
 
 import os
 import sys
-import gspread
 import pandas as pd
-from oauth2client.service_account import ServiceAccountCredentials
+import gspread
+from google.oauth2 import service_account
 
 # --- Config (adjust paths/URLs as needed) ---
 
@@ -28,9 +28,10 @@ SERVICE_ACCOUNT_FILE = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
 
 # RUN BY GITHUB
 def auth_client():
-    # Run locally
     SERVICE_ACCOUNT_FILE = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
-    creds = ServiceAccountCredentials.from_json_keyfile_name(SERVICE_ACCOUNT_FILE, SCOPES)
+    if not SERVICE_ACCOUNT_FILE:
+        raise RuntimeError("GOOGLE_APPLICATION_CREDENTIALS is not set")
+    creds = service_account.Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=SCOPES)
     return gspread.authorize(creds)
 
 def get_tickers(client):
