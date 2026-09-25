@@ -78,6 +78,14 @@ class UpdaterTests(unittest.TestCase):
             allow_legacy_blank_symbols=True,
             allow_legacy_missing_sp=True,
         )
+        frame.loc[0, "sp"] = "bad"
+        with self.assertRaisesRegex(ValueError, "invalid sp"):
+            updater.validate_series(
+                frame,
+                "EUR",
+                allow_legacy_blank_symbols=True,
+                allow_legacy_missing_sp=True,
+            )
 
     def test_dry_run_never_calls_write(self):
         previous = series([
