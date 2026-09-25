@@ -56,6 +56,15 @@ class UpdaterTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "duplicate"):
             updater.validate_series(frame, "EUR")
 
+    def test_validate_series_preserves_acknowledged_legacy_blank_symbols(self):
+        frame = series([
+            [pd.Timestamp("2026-01-01"), 1, 1, 1, 1, 1, 1, 1, "", 1],
+            [pd.Timestamp("2026-01-02"), 2, 2, 2, 2, 2, 2, 2, "EURU26", 2],
+        ])
+        with self.assertRaisesRegex(ValueError, "blank contract symbols"):
+            updater.validate_series(frame, "EUR")
+        updater.validate_series(frame, "EUR", allow_legacy_blank_symbols=True)
+
     def test_dry_run_never_calls_write(self):
         previous = series([
             [pd.Timestamp("2026-01-01"), 1, 1, 1, 1, 100, 1, 1, "EURU26", 100],
