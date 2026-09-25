@@ -82,6 +82,32 @@ class UpdaterTests(unittest.TestCase):
             updater.scrape_prepared, updater.write_and_verify = original_scrape, original_write
         self.assertEqual(len(worksheet.frame), 2)
 
+    def test_roll_uses_last_nonblank_historical_symbol(self):
+        previous = series([
+            [pd.Timestamp("2026-01-01"), 1, 1, 1, 1, 100, 1, 1, "EURU26", 100],
+            [pd.Timestamp("2026-01-02"), 1, 1, 1, 1, 101, 1, 1, "", 101],
+        ])
+        new_contract = series([
+            [pd.Timestamp("2026-01-03"), 1, 1, 1, 1, 102, 1, 1, "EURV26", None],
+        ])
+        old_contract = series([
+            [pd.Timestamp("2026-01-03"), 1, 1, 1, 1, 101, 1, 1, "EURU26", None],
+        ])
+        requested_symbols = []
+
+        def fake_scrape(symbol):
+            requested_symbols.append(symbol)
+            return new_contract if symbol == "EURV26" else old_contract
+
+        original_scrape, original_write = updater.scrape_prepared, updater.write_and_verify
+        updater.scrape_prepared = fake_scrape
+        updater.write_and_verify = lambda *args: self.fail("dry run attempted a write")
+        try:
+            updater.update_symbol(FakeDataSheet(FakeWorksheet(previous)), "EURV26", dry_run=True)
+        finally:
+            updater.scrape_prepared, updater.write_and_verify = original_scrape, original_write
+        self.assertEqual(requested_symbols, ["EURV26", "EURU26"])
+
 
 if __name__ == "__main__":
     unittest.main()
