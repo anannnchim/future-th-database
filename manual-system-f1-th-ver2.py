@@ -161,7 +161,11 @@ def update_symbol(market_data_sheet, symbol, dry_run=False):
     if scraped["symbol"].isna().any() or scraped["symbol"].astype(str).str.strip().eq("").any():
         raise ValueError(f"{symbol}: TFEX returned blank contract symbols")
     stored_latest, scraped_latest = previous["date"].max(), scraped["date"].max()
-    last_symbol = str(previous["symbol"].iloc[-1])
+    prior_symbols = previous["symbol"].astype("string").str.strip()
+    prior_symbols = prior_symbols[prior_symbols.notna() & prior_symbols.ne("")]
+    if prior_symbols.empty:
+        raise ValueError(f"{ticker} has no usable historical contract symbols")
+    last_symbol = prior_symbols.iloc[-1]
     print(f"{symbol}: stored={stored_latest:%Y-%m-%d}, source={scraped_latest:%Y-%m-%d}")
 
     if last_symbol == symbol:
