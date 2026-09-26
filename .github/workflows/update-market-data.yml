@@ -49,11 +49,33 @@ jobs:
         credentials_json: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }} 
 
     - name: Run Automated script
+      id: updater
       env:
         DRY_RUN: ${{ inputs.dry_run || 'false' }}
       run: |
+        set +e
         if [ "$DRY_RUN" = "true" ]; then
-          python manual-system-f1-th-ver2.py --dry-run
+          python manual-system-f1-th-ver2.py --dry-run 2>&1 | tee updater.log
         else
-          python manual-system-f1-th-ver2.py
+          python manual-system-f1-th-ver2.py 2>&1 | tee updater.log
         fi
+        updater_exit=${PIPESTATUS[0]}
+
+        {
+          echo "## F1-TH market-data update"
+          echo
+          echo "| Mode | Result |"
+          echo "| --- | --- |"
+          if [ "$DRY_RUN" = "true" ]; then
+            echo "| Dry run | $([ "$updater_exit" -eq 0 ] && echo 'Passed' || echo 'Failed') |"
+          else
+            echo "| Live update | $([ "$updater_exit" -eq 0 ] && echo 'Passed' || echo 'Failed') |"
+          fi
+          echo
+          echo "### Per-series results"
+          echo '```text'
+          grep -E 'DRY RUN validated|sheet updated and verified|ERROR:|All symbols|Update failed' updater.log || true
+          echo '```'
+        } >> "$GITHUB_STEP_SUMMARY"
+
+        exit "$updater_exit"
