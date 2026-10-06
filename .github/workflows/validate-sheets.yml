@@ -1,15 +1,28 @@
-name: Validate Google Sheet Dates
+name: Validate F1-TH freshness
 
 on:
   workflow_dispatch:
+    inputs:
+      wait_seconds:
+        description: "Optional time to wait for Automated F1 recalculation"
+        required: false
+        default: 0
+        type: number
   schedule:
-    - cron: '30 1 * * *'  # This run 30 mins after main
+    # 08:30 Asia/Bangkok, after the 07:30 fallback market-data update.
+    - cron: '30 1 * * *'
+
 permissions:
   contents: read
+
+concurrency:
+  group: f1-th-freshness
+  cancel-in-progress: false
 
 jobs:
   check-dates:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - name: Checkout repo
@@ -33,21 +46,20 @@ jobs:
         with:
           credentials_json: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
 
-      - name: Run date consistency check
+      - name: Validate end-to-end freshness
         env:
-          MARKET_INPUT_URL: "https://docs.google.com/spreadsheets/d/17SMA52gIOkjFan-0au_YJEAxoWIzoNA84qlmgoTsZ-s/edit#gid=1037340594"
-          MARKET_DATA_URL: "https://docs.google.com/spreadsheets/d/19Rj7iW5xWOe6ZJJRsO9VzsZXyLfFu1S_vtClEE_3DEw/edit#gid=748449431"
-          HOLDING_SHEET_NAME: "holding_information"
+          WAIT_SECONDS: ${{ inputs.wait_seconds || '0' }}
         run: |
-          python scripts/check_gsheets_dates.py
+          python scripts/check_gsheets_dates.py --wait-seconds "$WAIT_SECONDS"
 
       - name: Upload mismatch report (always)
         if: always()
         uses: actions/upload-artifact@v5
         with:
-          name: mismatch-report
+          name: f1-th-freshness-report
           path: mismatch_report.md
           if-no-files-found: warn
+          retention-days: 30
 
       # OPTIONAL: email on mismatch (requires SMTP secrets)
       - name: Send email on mismatch
