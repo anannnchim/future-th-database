@@ -19,6 +19,12 @@ class ExpectedTradingDateTests(unittest.TestCase):
             date(2026, 5, 1),
         )
 
+    def test_special_october_2026_closure_is_skipped(self):
+        self.assertEqual(
+            expected_trading_date(date(2026, 10, 19), closed_dates={date(2026, 10, 16)}),
+            date(2026, 10, 15),
+        )
+
     def test_extra_holidays_allow_comments(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "tfex_holidays.txt"
