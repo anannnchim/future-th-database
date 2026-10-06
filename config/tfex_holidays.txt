@@ -1,4 +1,3 @@
 # Extra TFEX/SET closure dates not already covered by Thailand public holidays.
 # Add one ISO date per line, and review against the official exchange calendar annually.
-# Example:
-# 2027-01-04
+2026-10-16 # SEC-designated special holiday for derivatives business operators
