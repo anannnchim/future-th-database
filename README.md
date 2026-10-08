@@ -92,6 +92,15 @@ Before enabling it, add these repository secrets:
   and a refresh token;
 - `F1_TH_PDF_PASSWORD`: the broker PDF password.
 
+## Reviewed production reconciliation
+
+`Reconcile F1-TH execution confirmations` is manual-dispatch only. It accepts a
+checked `STAGED` control row and defaults to dry-run validation. A reviewer must
+explicitly set its `apply` input to true before it writes `Execution` and
+`Equity`. Existing matching values are treated as idempotent; conflicting values
+stop the run and require review. A failed post-write equity check clears only
+cells written by that run and marks the control row `REVIEW_REQUIRED`.
+
 It reuses the existing `GOOGLE_APPLICATION_CREDENTIALS` and SMTP secrets.
 
 ## Contract rolls
