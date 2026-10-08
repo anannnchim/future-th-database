@@ -4,5 +4,6 @@ gspread==6.2.1
 gspread-dataframe==4.0.0
 holidays==0.83
 pandas==2.3.2
+pypdf==6.1.0
 selenium==4.35.0
 webdriver-manager==4.0.2
