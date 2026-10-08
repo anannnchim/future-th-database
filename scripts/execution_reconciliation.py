@@ -100,9 +100,20 @@ def extract_pdf_text(path: Path, password: str | None) -> str:
 def extract_balance(text: str, label: str) -> Decimal:
     pattern = rf"{label}\s*(?:\([^)]*\))?\s*(?:THB)?\s*([\d,]+(?:\.\d+)?)"
     match = re.search(pattern, text, flags=re.IGNORECASE)
-    if not match:
-        raise ConfirmationError(f"Missing {label} in confirmation")
-    return parse_money(match.group(1))
+    if match:
+        return parse_money(match.group(1))
+
+    equity_row = re.search(
+        r"Begin\s+Equity\s+End\s+Equity.*?\n\s*Balance\s+Balance.*?\n(?P<values>[^\n]+)",
+        text,
+        flags=re.IGNORECASE,
+    )
+    if equity_row:
+        values = re.findall(r"-?[\d,]+(?:\.\d+)?", equity_row.group("values"))
+        index = {"Begin Equity Balance": 0, "End Equity Balance": 1}.get(label)
+        if index is not None and len(values) > index:
+            return parse_money(values[index])
+    raise ConfirmationError(f"Missing {label} in confirmation")
 
 
 def extract_trade_date(text: str) -> date:
@@ -116,15 +127,23 @@ def extract_trade_date(text: str) -> date:
         if match:
             statement_date = match.group(1)
             break
-    if statement_date is None:
-        raise ConfirmationError("Missing statement trade date")
     from datetime import datetime
 
-    for date_format in ("%d %B %Y", "%d %b %Y"):
-        try:
-            return datetime.strptime(statement_date, date_format).date()
-        except ValueError:
-            pass
+    if statement_date is not None:
+        for date_format in ("%d %B %Y", "%d %b %Y"):
+            try:
+                return datetime.strptime(statement_date, date_format).date()
+            except ValueError:
+                pass
+    outstanding_position_date = re.search(
+        r"OUTSTANDING\s+POSITION\s+AS\s+OF\s+(\d{1,2}/\d{1,2}/\d{4})",
+        text,
+        re.IGNORECASE,
+    )
+    if outstanding_position_date:
+        return datetime.strptime(outstanding_position_date.group(1), "%d/%m/%Y").date()
+    if statement_date is None:
+        raise ConfirmationError("Missing statement trade date")
     raise ConfirmationError("Unrecognised statement trade date")
 
 
@@ -133,26 +152,34 @@ def parse_trades(text: str) -> tuple[Trade, ...]:
 
     An unfamiliar layout intentionally raises rather than guessing financial data.
     """
-    pattern = re.compile(
-        r"(?P<symbol>[A-Z][A-Z0-9]*)\s+(?P<side>BUY|SELL)\s+"
-        r"(?P<quantity>[\d,]+)\s+(?P<price>[\d,]+(?:\.\d+)?)",
-        re.IGNORECASE,
+    patterns = (
+        re.compile(
+            r"(?P<symbol>[A-Z][A-Z0-9]*)\s+(?P<side>BUY|SELL)\s+"
+            r"(?P<quantity>[\d,]+)\s+(?P<price>[\d,]+(?:\.\d+)?)",
+            re.IGNORECASE,
+        ),
+        re.compile(
+            r"(?P<symbol>[A-Z][A-Z0-9]*)\s+F\d+\s+(?P<side>B|S)\s+"
+            r"(?P<quantity>[\d,]+)\s+(?P<price>[\d,]+(?:\.\d+)?)",
+            re.IGNORECASE,
+        ),
     )
     results: list[Trade] = []
     seen: set[str] = set()
-    for match in pattern.finditer(text):
-        instrument = ticker_from_symbol(match.group("symbol"))
-        if instrument not in INSTRUMENTS:
-            continue
-        if instrument in seen:
-            raise ConfirmationError(f"Multiple executions for {instrument}; review required")
-        seen.add(instrument)
-        quantity = int(match.group("quantity").replace(",", ""))
-        if quantity <= 0:
-            raise ConfirmationError(f"Invalid contract count for {instrument}")
-        if match.group("side").upper() == "SELL":
-            quantity *= -1
-        results.append(Trade(instrument, quantity, parse_money(match.group("price"))))
+    for pattern in patterns:
+        for match in pattern.finditer(text):
+            instrument = ticker_from_symbol(match.group("symbol"))
+            if instrument not in INSTRUMENTS:
+                continue
+            if instrument in seen:
+                raise ConfirmationError(f"Multiple executions for {instrument}; review required")
+            seen.add(instrument)
+            quantity = int(match.group("quantity").replace(",", ""))
+            if quantity <= 0:
+                raise ConfirmationError(f"Invalid contract count for {instrument}")
+            if match.group("side").upper() in {"SELL", "S"}:
+                quantity *= -1
+            results.append(Trade(instrument, quantity, parse_money(match.group("price"))))
     if not results:
         raise ConfirmationError("No supported execution rows found in confirmation")
     return tuple(results)
