@@ -1,5 +1,7 @@
 # Production dependencies. Update deliberately in a pull request, with tests.
 google-auth==2.40.3
+google-api-python-client==2.181.0
+google-auth-oauthlib==1.2.2
 gspread==6.2.1
 gspread-dataframe==4.0.0
 holidays==0.83

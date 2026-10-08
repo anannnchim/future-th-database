@@ -73,6 +73,25 @@ For an encrypted PDF, set `F1_TH_PDF_PASSWORD` outside the repository and pass
 instrument prices, unknown instruments, malformed statements, and failed
 equity checks for manual review.
 
+## Gmail confirmation intake
+
+`scripts/execution_confirmation_intake.py` reads checked rows in the
+`order-confirmation` tab of Automated System F1. It only searches and parses
+the broker PDF, then updates that control row to `STAGED`,
+`MISSING_CONFIRMATION`, or `REVIEW_REQUIRED`. It never writes `Execution` or
+`Equity`.
+
+The **Stage F1-TH execution confirmations** workflow runs around 06:15 and
+07:15 Asia/Bangkok, with a manual option for a specific trade date. GitHub
+cron timing is best-effort, so use manual dispatch when timing is critical.
+Before enabling it, add these repository secrets:
+
+- `GMAIL_OAUTH_TOKEN`: OAuth authorized-user JSON with Gmail read-only access
+  and a refresh token;
+- `F1_TH_PDF_PASSWORD`: the broker PDF password.
+
+It reuses the existing `GOOGLE_APPLICATION_CREDENTIALS` and SMTP secrets.
+
 ## Contract rolls
 
 Update `current_symbol` in the `holding_information` worksheet when a
