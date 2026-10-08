@@ -16,8 +16,9 @@ class ApplyExecutionConfirmationTests(unittest.TestCase):
         )
 
     def test_date_row_uses_actual_date_not_position(self):
-        self.assertEqual(apply.date_row(["Date", "2026-10-06", "2026-10-07"], date(2026, 10, 7)), 3)
-        self.assertEqual(apply.previous_date_row(["Date", "2026-10-06", "2026-10-07"], date(2026, 10, 7)), 2)
+        values = ["Date", "Transaction", "2026-10-06", "2026-10-07"]
+        self.assertEqual(apply.date_row(values, date(2026, 10, 7)), 4)
+        self.assertEqual(apply.previous_date_row(values, date(2026, 10, 7)), 3)
 
     def test_execution_writes_only_blank_cells(self):
         proposed = apply.proposed_cells(self.confirmation)

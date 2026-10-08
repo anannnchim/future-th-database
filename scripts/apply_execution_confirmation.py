@@ -63,8 +63,13 @@ def same_number(existing, expected: Decimal | int) -> bool:
 
 def date_row(values: list, target: date) -> int:
     for row, value in enumerate(values[1:], start=2):
-        if value and parse_trade_date(value) == target:
-            return row
+        if not value:
+            continue
+        try:
+            if parse_trade_date(value) == target:
+                return row
+        except IntakeError:
+            continue
     raise ConfirmationError(f"No worksheet row for {target.isoformat()}")
 
 
@@ -72,7 +77,10 @@ def previous_date_row(values: list, target: date) -> int:
     candidates = []
     for row, value in enumerate(values[1:], start=2):
         if value:
-            parsed = parse_trade_date(value)
+            try:
+                parsed = parse_trade_date(value)
+            except IntakeError:
+                continue
             if parsed < target:
                 candidates.append((parsed, row))
     if not candidates:
