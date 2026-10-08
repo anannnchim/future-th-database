@@ -106,12 +106,26 @@ def extract_balance(text: str, label: str) -> Decimal:
 
 
 def extract_trade_date(text: str) -> date:
-    match = re.search(r"Confirmation\s+Note\s+as\s+of\s+(\d{1,2}\s+[A-Za-z]+\s+\d{4})", text, re.IGNORECASE)
-    if not match:
+    patterns = (
+        r"(?:Daily\s+Derivatives\s+)?Confirmation\s+Note(?:\s*\([^)]*\))?\s+as\s+(?:of|at)\s*:?\s*(\d{1,2}\s+[A-Za-z]+\s+\d{4})",
+        r"\bas\s+(?:of|at)\s*:?\s*(\d{1,2}\s+[A-Za-z]+\s+\d{4})",
+    )
+    statement_date = None
+    for pattern in patterns:
+        match = re.search(pattern, text, re.IGNORECASE)
+        if match:
+            statement_date = match.group(1)
+            break
+    if statement_date is None:
         raise ConfirmationError("Missing statement trade date")
     from datetime import datetime
 
-    return datetime.strptime(match.group(1), "%d %B %Y").date()
+    for date_format in ("%d %B %Y", "%d %b %Y"):
+        try:
+            return datetime.strptime(statement_date, date_format).date()
+        except ValueError:
+            pass
+    raise ConfirmationError("Unrecognised statement trade date")
 
 
 def parse_trades(text: str) -> tuple[Trade, ...]:
