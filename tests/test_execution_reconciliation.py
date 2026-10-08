@@ -34,6 +34,39 @@ class ExecutionReconciliationTests(unittest.TestCase):
             text = SAMPLE.replace("E-Document : Daily Derivatives Confirmation Note as of 07 October 2026", heading)
             self.assertEqual(reconciliation.parse_confirmation(text).trade_date, date(2026, 10, 7))
 
+    def test_parse_confirmation_accepts_broker_statement_position_date(self):
+        text = SAMPLE.replace(
+            "E-Document : Daily Derivatives Confirmation Note as of 07 October 2026",
+            "Daily Statement of Derivatives Trading Account\nOUTSTANDING POSITION AS OF 07/10/2026",
+        )
+        self.assertEqual(reconciliation.parse_confirmation(text).trade_date, date(2026, 10, 7))
+
+    def test_parse_confirmation_accepts_broker_compact_trade_row(self):
+        text = """
+        OUTSTANDING POSITION AS OF 07/10/2026
+        TRADING CONFIRMATION
+        S50Z26 F123456789 S 2 1054.300000 0.00
+        STATEMENT OF ACCOUNT
+        Begin Equity Balance THB 2,346,451.95
+        End Equity Balance THB 2,365,712.38
+        """
+        confirmation = reconciliation.parse_confirmation(text)
+        self.assertEqual(confirmation.trades, (reconciliation.Trade("S50", -2, Decimal("1054.300000")),))
+
+    def test_parse_confirmation_accepts_broker_equity_columns(self):
+        text = """
+        OUTSTANDING POSITION AS OF 07/10/2026
+        TRADING CONFIRMATION
+        S50Z26 F123456789 B 2 1054.300000 0.00
+        STATEMENT OF ACCOUNT
+        Begin Equity End Equity Initial Maintenance Excess/ Net
+        Balance Balance Margin Margin Insufficient Customer Paid
+        2,346,451.95 2,365,712.38 300,000.00 300,000.00 1,000,000.00 0.00
+        """
+        confirmation = reconciliation.parse_confirmation(text)
+        self.assertEqual(confirmation.begin_equity, Decimal("2346451.95"))
+        self.assertEqual(confirmation.end_equity, Decimal("2365712.38"))
+
     def test_duplicate_instrument_requires_review(self):
         with self.assertRaisesRegex(reconciliation.ConfirmationError, "Multiple executions"):
             reconciliation.parse_confirmation(SAMPLE + "S50Z26 SELL 1 1055.00")

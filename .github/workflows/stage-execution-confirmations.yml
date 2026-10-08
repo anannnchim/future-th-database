@@ -68,6 +68,9 @@ jobs:
       - name: Send failure email
         if: failure()
         uses: dawidd6/action-send-mail@v22
+        env:
+          # GitHub-hosted runners have no usable IPv6 route for Gmail SMTP.
+          NODE_OPTIONS: --dns-result-order=ipv4first
         with:
           server_address: ${{ secrets.SMTP_HOST }}
           server_port: ${{ secrets.SMTP_PORT }}
