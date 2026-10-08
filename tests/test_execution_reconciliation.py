@@ -26,6 +26,14 @@ class ExecutionReconciliationTests(unittest.TestCase):
         self.assertEqual(confirmation.trades[0], reconciliation.Trade("S50", 2, Decimal("1054.30")))
         self.assertEqual(confirmation.trades[1], reconciliation.Trade("USD", -10, Decimal("33.36")))
 
+    def test_parse_confirmation_accepts_statement_date_variants(self):
+        for heading in (
+            "Daily Derivatives Confirmation Note as at: 07 Oct 2026",
+            "Statement as of 07 October 2026",
+        ):
+            text = SAMPLE.replace("E-Document : Daily Derivatives Confirmation Note as of 07 October 2026", heading)
+            self.assertEqual(reconciliation.parse_confirmation(text).trade_date, date(2026, 10, 7))
+
     def test_duplicate_instrument_requires_review(self):
         with self.assertRaisesRegex(reconciliation.ConfirmationError, "Multiple executions"):
             reconciliation.parse_confirmation(SAMPLE + "S50Z26 SELL 1 1055.00")
