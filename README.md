@@ -51,6 +51,28 @@ request, and use the dry run before merging changes that affect data logic.
 `.github/workflows/validate-sheets.yml` compares the latest stored date across
 all active F1-TH tickers and reports mismatches.
 
+## Execution-confirmation staging
+
+`scripts/execution_reconciliation.py` stages a broker Daily Derivatives
+Confirmation Note for review. It is deliberately read-only: it never writes to
+the `Execution` or `Equity` worksheets.
+
+Use a locally extracted text file while validating a new broker PDF layout:
+
+```bash
+python scripts/execution_reconciliation.py \
+  --text-file confirmation.txt \
+  --trade-date 2026-10-07 \
+  --equity-previous 3346451.954 \
+  --equity-current 3365712.387
+```
+
+For an encrypted PDF, set `F1_TH_PDF_PASSWORD` outside the repository and pass
+`--pdf path/to/confirmation.pdf`. The report masks financial values unless
+`--include-values` is explicitly requested. The parser rejects duplicate daily
+instrument prices, unknown instruments, malformed statements, and failed
+equity checks for manual review.
+
 ## Contract rolls
 
 Update `current_symbol` in the `holding_information` worksheet when a
