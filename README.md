@@ -68,7 +68,9 @@ python scripts/execution_reconciliation.py \
 ```
 
 For an encrypted PDF, set `F1_TH_PDF_PASSWORD` outside the repository and pass
-`--pdf path/to/confirmation.pdf`. The report masks financial values unless
+`--pdf path/to/confirmation.pdf`. Install the requirements with the `crypto`
+extra (already included in `requirements.txt`) so AES-encrypted broker PDFs can
+be read. The report masks financial values unless
 `--include-values` is explicitly requested. The parser rejects duplicate daily
 instrument prices, unknown instruments, malformed statements, and failed
 equity checks for manual review.

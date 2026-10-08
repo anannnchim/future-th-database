@@ -83,10 +83,15 @@ def parse_money(value: str) -> Decimal:
 def extract_pdf_text(path: Path, password: str | None) -> str:
     if not path.exists():
         raise ConfirmationError(f"PDF does not exist: {path}")
-    reader = PdfReader(path)
-    if reader.is_encrypted and reader.decrypt(password or "") == 0:
-        raise ConfirmationError("Unable to decrypt confirmation PDF")
-    text = "\n".join(page.extract_text() or "" for page in reader.pages)
+    try:
+        reader = PdfReader(path)
+        if reader.is_encrypted and reader.decrypt(password or "") == 0:
+            raise ConfirmationError("Unable to decrypt confirmation PDF")
+        text = "\n".join(page.extract_text() or "" for page in reader.pages)
+    except ConfirmationError:
+        raise
+    except Exception as exc:
+        raise ConfirmationError("Unable to read confirmation PDF") from exc
     if not text.strip():
         raise ConfirmationError("Confirmation PDF contains no extractable text")
     return text
