@@ -3,6 +3,7 @@ import unittest
 from datetime import date
 from decimal import Decimal
 from pathlib import Path
+from unittest.mock import patch
 
 from scripts import execution_reconciliation as reconciliation
 
@@ -50,6 +51,14 @@ class ExecutionReconciliationTests(unittest.TestCase):
             report = path.read_text()
         self.assertIn("Production sheets were not changed", report)
         self.assertNotIn("1054.30", report)
+
+    def test_pdf_read_error_requires_review(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "confirmation.pdf"
+            path.write_bytes(b"not a real pdf")
+            with patch.object(reconciliation, "PdfReader", side_effect=RuntimeError("crypto unavailable")):
+                with self.assertRaisesRegex(reconciliation.ConfirmationError, "Unable to read confirmation PDF"):
+                    reconciliation.extract_pdf_text(path, "password")
 
 
 if __name__ == "__main__":
