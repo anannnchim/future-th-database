@@ -73,7 +73,8 @@ jobs:
           subject: "[Anan Capital] Google Sheet date mismatch detected"
           to: ${{ secrets.EMAIL_TO }}
           from: ${{ secrets.EMAIL_FROM }}
-          secure: true
+          # Port 465 uses implicit TLS; port 587 upgrades with STARTTLS.
+          secure: ${{ secrets.SMTP_PORT == '465' }}
           body: |
             A date mismatch was detected across symbols.
             See the attached report or the GitHub job logs.
