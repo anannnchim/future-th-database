@@ -79,7 +79,8 @@ jobs:
           subject: "[Anan Capital] F1 broker confirmation needs review"
           to: ${{ secrets.EMAIL_TO }}
           from: ${{ secrets.EMAIL_FROM }}
-          secure: true
+          # Port 465 uses implicit TLS; port 587 upgrades with STARTTLS.
+          secure: ${{ secrets.SMTP_PORT == '465' }}
           body: |
             The F1 broker-confirmation staging check needs review.
             See the GitHub Actions report; production sheets were not changed.
