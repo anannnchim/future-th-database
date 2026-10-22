@@ -77,15 +77,19 @@ equity checks for manual review.
 
 ## Gmail confirmation intake
 
-`scripts/execution_confirmation_intake.py` reads checked rows in the
-`order-confirmation` tab of Automated System F1. It only searches and parses
-the broker PDF, then updates that control row to `STAGED`,
-`MISSING_CONFIRMATION`, or `REVIEW_REQUIRED`. It never writes `Execution` or
-`Equity`.
+`scripts/execution_confirmation_intake.py` can read checked rows in the
+`order-confirmation` tab of Automated System F1, or automatically create the
+row from a matching broker email. It stages the confirmation before the
+reconciliation step writes `Execution` and `Equity`.
 
 The **Stage F1-TH execution confirmations** workflow runs around 06:15 and
-07:15 Asia/Bangkok, with a manual option for a specific trade date. GitHub
-cron timing is best-effort, so use manual dispatch when timing is critical.
+07:15 Asia/Bangkok. Scheduled runs treat a broker email as the trade signal:
+they create/update the control row, stage it, and automatically reconcile it
+only when all execution and equity checks pass. A missing email means no
+action; parsing or reconciliation exceptions fail the run and send an alert.
+Manual dispatch can still stage a specific date, and can opt into automatic
+reconciliation with `auto_apply`. GitHub cron timing is best-effort, so use
+manual dispatch when timing is critical.
 Before enabling it, add these repository secrets:
 
 - `GMAIL_OAUTH_TOKEN`: OAuth authorized-user JSON with Gmail read-only access

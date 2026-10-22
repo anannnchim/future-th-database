@@ -7,6 +7,11 @@ on:
         description: "Trade date to process (YYYY-MM-DD); leave empty for the latest completed TFEX trading date"
         required: false
         type: string
+      auto_apply:
+        description: "Automatically reconcile a successfully staged confirmation"
+        required: false
+        default: false
+        type: boolean
   schedule:
     # 06:15 and 07:15 Asia/Bangkok. GitHub cron is best-effort.
     - cron: '15 23 * * 0-5'
@@ -48,15 +53,30 @@ jobs:
           chmod 600 "$token_file"
           echo "GMAIL_OAUTH_TOKEN_FILE=$token_file" >> "$GITHUB_ENV"
       - name: Stage broker confirmation
+        id: stage
         env:
           F1_TH_PDF_PASSWORD: ${{ secrets.F1_TH_PDF_PASSWORD }}
           TRADE_DATE: ${{ inputs.trade_date || '' }}
         run: |
-          if [ -n "$TRADE_DATE" ]; then
-            python scripts/execution_confirmation_intake.py --trade-date "$TRADE_DATE"
-          else
-            python scripts/execution_confirmation_intake.py
+          discover_arg=""
+          if [ "${{ github.event_name }}" = "schedule" ] || [ "${{ inputs.auto_apply }}" = "true" ]; then
+            discover_arg="--auto-discover"
           fi
+          if [ -n "$TRADE_DATE" ]; then
+            python scripts/execution_confirmation_intake.py --trade-date "$TRADE_DATE" $discover_arg
+          else
+            python scripts/execution_confirmation_intake.py $discover_arg
+          fi
+      - name: Automatically reconcile validated confirmation
+        if: steps.stage.outputs.staged == 'true' && (github.event_name == 'schedule' || inputs.auto_apply == true)
+        env:
+          F1_TH_PDF_PASSWORD: ${{ secrets.F1_TH_PDF_PASSWORD }}
+        run: |
+          trade_date="${{ inputs.trade_date }}"
+          if [ -z "$trade_date" ]; then
+            trade_date=$(python -c 'from scripts.trading_calendar import expected_trading_date; print(expected_trading_date())')
+          fi
+          python scripts/apply_execution_confirmation.py --trade-date "$trade_date" --apply
       - name: Upload staging report
         if: always()
         uses: actions/upload-artifact@v5
