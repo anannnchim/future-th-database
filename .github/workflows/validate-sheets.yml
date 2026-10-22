@@ -9,8 +9,9 @@ on:
         default: 0
         type: number
   schedule:
-    # 08:30 Asia/Bangkok, after the 07:30 fallback market-data update.
-    - cron: '30 1 * * *'
+    # 07:20 Asia/Bangkok, Monday-Saturday, after the 06:45 fallback
+    # market-data update and before the TFEX 08:00 open effective 2026-11-16.
+    - cron: '20 0 * * 1-6'
 
 permissions:
   contents: read

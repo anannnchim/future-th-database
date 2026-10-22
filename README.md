@@ -6,7 +6,7 @@ This repository updates the Google Sheets market database used by System F1-TH.
 
 The `Update F1-TH market data` workflow:
 
-- runs at 03:07 Asia/Bangkok, Monday through Saturday, with a 07:30 fallback;
+- runs at 03:07 Asia/Bangkok, Monday through Saturday, with a 06:45 fallback;
 - can also be started manually with `workflow_dispatch`;
 - reads the current contracts from the `holding_information` worksheet;
 - scrapes TFEX historical trading data;
@@ -82,14 +82,32 @@ equity checks for manual review.
 row from a matching broker email. It stages the confirmation before the
 reconciliation step writes `Execution` and `Equity`.
 
-The **Stage F1-TH execution confirmations** workflow runs around 06:15 and
-07:15 Asia/Bangkok. Scheduled runs treat a broker email as the trade signal:
+The **Stage F1-TH execution confirmations** workflow runs around 05:45 and
+06:30 Asia/Bangkok. The broker normally sends its email around 05:25, leaving
+time for both checks before the TFEX 08:00 open effective 16 November 2026.
+Scheduled runs treat a broker email as the trade signal:
 they create/update the control row, stage it, and automatically reconcile it
 only when all execution and equity checks pass. A missing email means no
 action; parsing or reconciliation exceptions fail the run and send an alert.
 Manual dispatch can still stage a specific date, and can opt into automatic
 reconciliation with `auto_apply`. GitHub cron timing is best-effort, so use
 manual dispatch when timing is critical.
+
+## Pre-market timing (Asia/Bangkok)
+
+From 16 November 2026, TFEX opens at 08:00. The scheduled workflow order is:
+
+| Time | Workflow | Purpose |
+| --- | --- | --- |
+| 03:07 | Update F1-TH market data | Primary prior-session data refresh. |
+| 05:45 | Stage F1-TH execution confirmations | First check after the expected broker email. |
+| 06:30 | Stage F1-TH execution confirmations | Second confirmation check. |
+| 06:45 | Update F1-TH market data | Fallback data refresh. |
+| 07:20 | Validate F1-TH freshness | End-to-end data freshness validation. |
+| 08:00 | TFEX | Market open; no scheduled maintenance should be pending. |
+
+All scheduled runs are Monday through Saturday to cover the prior Friday
+overnight session and its Saturday-morning processing.
 Before enabling it, add these repository secrets:
 
 - `GMAIL_OAUTH_TOKEN`: OAuth authorized-user JSON with Gmail read-only access
