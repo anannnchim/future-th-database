@@ -12,8 +12,9 @@ on:
     # Primary: 03:07 Asia/Bangkok, Monday-Saturday. This compensates for
     # observed GitHub scheduling delays while avoiding the top of the hour.
     - cron: '7 20 * * 0-5'
-    # Fallback: 07:30 Asia/Bangkok, Monday-Saturday.
-    - cron: '30 0 * * 1-6'
+    # Fallback: 06:45 Asia/Bangkok, Monday-Saturday. This leaves a 75-minute
+    # buffer before the TFEX 08:00 open effective 2026-11-16.
+    - cron: '45 23 * * 0-5'
 
 permissions:
   contents: read

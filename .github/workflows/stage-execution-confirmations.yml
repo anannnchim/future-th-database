@@ -13,9 +13,11 @@ on:
         default: false
         type: boolean
   schedule:
-    # 06:15 and 07:15 Asia/Bangkok. GitHub cron is best-effort.
-    - cron: '15 23 * * 0-5'
-    - cron: '15 0 * * 1-6'
+    # 05:45 and 06:30 Asia/Bangkok, Monday-Saturday. The broker normally
+    # sends confirmations around 05:25; both checks finish before the TFEX
+    # 08:00 open effective 2026-11-16. GitHub cron is best-effort.
+    - cron: '45 22 * * 0-5'
+    - cron: '30 23 * * 0-5'
 
 permissions:
   contents: read
