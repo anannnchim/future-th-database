@@ -35,6 +35,36 @@ class ApplyExecutionConfirmationTests(unittest.TestCase):
         with self.assertRaisesRegex(ConfirmationError, "conflicting"):
             apply.equity_write("361", Decimal("360"), "Equity!K570")
 
+    def test_rollback_uses_cell_only_a1_references(self):
+        class Worksheet:
+            def __init__(self):
+                self.cleared = []
+
+            def update_acell(self, cell, value):
+                self.cleared.append((cell, value))
+
+        worksheet = Worksheet()
+        failures = apply.rollback_writes([(worksheet, "O579"), (worksheet, "K579")])
+
+        self.assertEqual(failures, [])
+        self.assertEqual(worksheet.cleared, [("K579", ""), ("O579", "")])
+
+    def test_rollback_reports_failed_cells_without_stopping(self):
+        class Worksheet:
+            def __init__(self):
+                self.cleared = []
+
+            def update_acell(self, cell, value):
+                if cell == "O579":
+                    raise RuntimeError("network error")
+                self.cleared.append((cell, value))
+
+        worksheet = Worksheet()
+        failures = apply.rollback_writes([(worksheet, "O579"), (worksheet, "K579")])
+
+        self.assertEqual(failures, ["O579"])
+        self.assertEqual(worksheet.cleared, [("K579", "")])
+
 
 if __name__ == "__main__":
     unittest.main()
