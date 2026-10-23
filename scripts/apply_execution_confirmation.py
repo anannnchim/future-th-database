@@ -115,6 +115,17 @@ def equity_write(existing, expected: Decimal, cell: str) -> bool:
     return False
 
 
+def rollback_writes(written_cells: list[tuple[object, str]]) -> list[str]:
+    """Clear only cells written by this run, while preserving the review state."""
+    failures = []
+    for worksheet, cell in reversed(written_cells):
+        try:
+            worksheet.update_acell(cell, "")
+        except Exception:
+            failures.append(cell)
+    return failures
+
+
 def report(path: Path, trade_date: date, result: str, detail: str, applied: bool):
     lines = [
         "# F1-TH execution reconciliation report", "",
@@ -181,13 +192,18 @@ def main(argv=None):
         write_k = equity_write(equity.acell(f"K{equity_row}").value, adjustment, f"Equity!K{equity_row}")
         write_o = equity_write(equity.acell(f"O{equity_row}").value, confirmation.end_equity, f"Equity!O{equity_row}")
         requests = []
+        equity_cells = []
         if write_k:
             requests.append({"range": f"K{equity_row}", "values": [[str(adjustment)]]})
+            equity_cells.append(f"K{equity_row}")
         if write_o:
             requests.append({"range": f"O{equity_row}", "values": [[str(confirmation.end_equity)]]})
+            equity_cells.append(f"O{equity_row}")
         if requests:
             equity.batch_update(requests)
-            written_cells.extend((equity, request["range"]) for request in requests)
+            # gspread may mutate request["range"] to a sheet-qualified A1
+            # reference. update_acell expects a cell-only A1 reference.
+            written_cells.extend((equity, cell) for cell in equity_cells)
             time.sleep(10)
         previous = decimal_or_none(equity.acell(f"N{prior_equity_row}").value)
         current = decimal_or_none(equity.acell(f"N{equity_row}").value)
@@ -199,10 +215,13 @@ def main(argv=None):
         control.update_acell(f"D{control_row}", "RECONCILED")
         report(args.report, args.trade_date, "RECONCILED", "Execution and equity checks passed", True)
         return 0
-    except (ConfirmationError, IntakeError):
-        for worksheet, cell in reversed(written_cells):
-            worksheet.update_acell(cell, "")
+    except (ConfirmationError, IntakeError) as exc:
+        rollback_failures = rollback_writes(written_cells)
         control.update_acell(f"D{control_row}", "REVIEW_REQUIRED")
+        if rollback_failures:
+            raise ConfirmationError(
+                "Rollback failed for " + ", ".join(rollback_failures) + "; review required"
+            ) from exc
         raise
 
 
