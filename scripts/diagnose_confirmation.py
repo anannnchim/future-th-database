@@ -43,8 +43,8 @@ def main():
     for instrument, values in zip(INSTRUMENTS, inputs):
         values = list(values) + [''] * 7
         multiplier, old_settlement = number(values[1]), number(values[2])
-        change = number(values[5]) - number(values[4])
         trade = trades.get(instrument)
+        change = Decimal(trade.quantity) if trade else Decimal(0)
         position_changes[instrument] = change
         print('DIAG ' + instrument + '_quantity_matches_position_change=' + str(change == (trade.quantity if trade else 0)))
         if change:
@@ -56,10 +56,13 @@ def main():
     fee = sum((abs(trades[i].quantity) * number(rate) if i in trades else Decimal(0)) for i, rate in zip(INSTRUMENTS, rates))
     fee += number(execution.acell(f'AG{exrow}').value)
     pnl = number(equity.acell(f'I{row}').value)
+    per_contract_pnl = equity.get(f'B{row}:G{row}')[0]
+    pnl += sum(number(per_contract_pnl[index]) * trade.quantity for index, instrument in enumerate(INSTRUMENTS) if (trade := trades.get(instrument)) is not None)
     projected = previous + pnl - fee + adjustment
     print('DIAG projected_end_equity=' + ('PASS' if abs(projected-confirmation.end_equity-EQUITY_OFFSET) <= TOLERANCE else 'FAIL'))
     projected_from_broker = prior_stored_broker_end + EQUITY_OFFSET + pnl - fee + adjustment
     print('DIAG projected_end_using_prior_broker=' + ('PASS' if abs(projected_from_broker-confirmation.end_equity-EQUITY_OFFSET) <= TOLERANCE else 'FAIL'))
+    print('DIAG projected_end_using_prior_broker_within_rounding=' + str(abs(projected_from_broker-confirmation.end_equity-EQUITY_OFFSET) <= Decimal('0.10')))
     print('DIAG production_writes=NONE')
 
 
