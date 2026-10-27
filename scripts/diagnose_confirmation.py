@@ -29,6 +29,9 @@ def main():
     row, previous_row = date_row(dates, target), previous_date_row(dates, target)
     exrow = date_row(execution.col_values(1), target)
     previous = number(equity.acell(f'N{previous_row}').value)
+    prior_stored_broker_end = number(equity.acell(f'O{previous_row}').value)
+    print('DIAG prior_calculated_matches_stored_broker=' + str(abs(previous-prior_stored_broker_end-EQUITY_OFFSET) <= TOLERANCE))
+    print('DIAG broker_begin_matches_prior_stored_broker=' + str(abs(confirmation.begin_equity-prior_stored_broker_end) <= TOLERANCE))
     begin_ok = abs(previous - confirmation.begin_equity - EQUITY_OFFSET) <= TOLERANCE
     print('DIAG begin_equity=' + ('PASS' if begin_ok else 'FAIL'))
     print('DIAG previous_equity_date=' + str(parse_sheet_date(dates[previous_row-1])))
@@ -55,6 +58,8 @@ def main():
     pnl = number(equity.acell(f'I{row}').value)
     projected = previous + pnl - fee + adjustment
     print('DIAG projected_end_equity=' + ('PASS' if abs(projected-confirmation.end_equity-EQUITY_OFFSET) <= TOLERANCE else 'FAIL'))
+    projected_from_broker = prior_stored_broker_end + EQUITY_OFFSET + pnl - fee + adjustment
+    print('DIAG projected_end_using_prior_broker=' + ('PASS' if abs(projected_from_broker-confirmation.end_equity-EQUITY_OFFSET) <= TOLERANCE else 'FAIL'))
     print('DIAG production_writes=NONE')
 
 
