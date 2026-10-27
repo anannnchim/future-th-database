@@ -60,15 +60,7 @@ jobs:
           F1_TH_PDF_PASSWORD: ${{ secrets.F1_TH_PDF_PASSWORD }}
           TRADE_DATE: ${{ inputs.trade_date || '' }}
         run: |
-          discover_arg=""
-          if [ "${{ github.event_name }}" = "schedule" ] || [ "${{ inputs.auto_apply }}" = "true" ]; then
-            discover_arg="--auto-discover"
-          fi
-          if [ -n "$TRADE_DATE" ]; then
-            python scripts/execution_confirmation_intake.py --trade-date "$TRADE_DATE" $discover_arg
-          else
-            python scripts/execution_confirmation_intake.py $discover_arg
-          fi
+          python scripts/diagnose_confirmation.py
       - name: Automatically reconcile validated confirmation
         if: steps.stage.outputs.staged == 'true' && (github.event_name == 'schedule' || inputs.auto_apply == true)
         env:
