@@ -4,7 +4,7 @@ from decimal import Decimal
 import os
 from pathlib import Path
 
-from apply_execution_confirmation import date_row, previous_date_row, decimal_or_none
+from apply_execution_confirmation import date_row, previous_date_row, decimal_or_none, same_number, proposed_cells
 from check_gsheets_dates import auth_client, AUTOMATED_F1_URL, parse_sheet_date
 from execution_confirmation_intake import gmail_service, parse_single_confirmation
 from execution_reconciliation import EQUITY_OFFSET, TOLERANCE, INSTRUMENTS
@@ -16,7 +16,7 @@ def number(value):
 
 
 def main():
-    target = expected_trading_date()
+    target = date.fromisoformat(os.environ['TRADE_DATE']) if os.environ.get('TRADE_DATE') else expected_trading_date()
     parsed = parse_single_confirmation(gmail_service(Path(os.environ['GMAIL_OAUTH_TOKEN_FILE'])), target, os.environ['F1_TH_PDF_PASSWORD'])
     if not parsed:
         print('DIAG broker_pdf=NOT_FOUND')
@@ -28,6 +28,14 @@ def main():
     dates = equity.col_values(1)
     row, previous_row = date_row(dates, target), previous_date_row(dates, target)
     exrow = date_row(execution.col_values(1), target)
+    existing = execution.get(f'B{exrow}:N{exrow}')
+    cells = (existing[0] if existing else []) + [''] * 13
+    indexes = {**dict(zip('BCDEFG', range(6))), **dict(zip('IJKLMN', range(7, 13)))}
+    print('DIAG actual_execution_matches_pdf=' + str(all(same_number(cells[indexes[column]], value) for column, value in proposed_cells(confirmation).items())))
+    current_calculated = number(equity.acell(f'N{row}').value)
+    print('DIAG actual_end_equity=' + ('PASS' if abs(current_calculated-confirmation.end_equity-EQUITY_OFFSET) <= TOLERANCE else 'FAIL'))
+    stored_end = decimal_or_none(equity.acell(f'O{row}').value)
+    print('DIAG stored_broker_end_matches_pdf=' + str(stored_end is not None and abs(stored_end-confirmation.end_equity) <= TOLERANCE))
     previous = number(equity.acell(f'N{previous_row}').value)
     prior_stored_broker_end = number(equity.acell(f'O{previous_row}').value)
     print('DIAG prior_calculated_matches_stored_broker=' + str(abs(previous-prior_stored_broker_end-EQUITY_OFFSET) <= TOLERANCE))
@@ -36,6 +44,9 @@ def main():
     print('DIAG begin_equity=' + ('PASS' if begin_ok else 'FAIL'))
     print('DIAG previous_equity_date=' + str(parse_sheet_date(dates[previous_row-1])))
     print('DIAG adjustment_date_matches=' + str(parse_sheet_date(readme.acell('P18').value) == target))
+    if os.environ.get('TRADE_DATE'):
+        print('DIAG production_writes=NONE')
+        return
     inputs = readme.get('O24:U29')
     trades = {t.instrument: t for t in confirmation.trades}
     adjustment = Decimal(0)
