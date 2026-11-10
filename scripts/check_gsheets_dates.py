@@ -34,6 +34,7 @@ def parse_args(argv=None):
     parser.add_argument("--wait-seconds", type=int, default=0, help="Wait for Automated F1 recalculation.")
     parser.add_argument("--poll-seconds", type=int, default=60, help="Recheck interval while waiting.")
     parser.add_argument("--expected-date", type=date.fromisoformat, help="Override the expected trading date.")
+    parser.add_argument("--market-only", action="store_true", help="Check market data and Automated F1 series without the manual B-Monitoring snapshot.")
     return parser.parse_args(argv)
 
 
@@ -103,7 +104,7 @@ def fmt(value):
     return value.isoformat() if value else "missing"
 
 
-def write_report(rows, monitoring_date, monitoring_ok, expected, message, report_path=REPORT_PATH):
+def write_report(rows, monitoring_date, monitoring_ok, expected, message, report_path=REPORT_PATH, market_only=False):
     lines = [
         "# F1-TH freshness report", "", f"- Checked: {datetime.now(BANGKOK).isoformat(timespec='seconds')}",
         f"- Expected trading date: **{expected.isoformat()}**", f"- Result: **{message}**", "",
@@ -111,7 +112,10 @@ def write_report(rows, monitoring_date, monitoring_ok, expected, message, report
     ]
     for row in rows:
         lines.append(f"| {row['ticker']} | {fmt(row['market'])} | {fmt(row['automated'])} | {row['status']} |")
-    lines.extend(["", f"- B-Monitoring last updated: **{fmt(monitoring_date)}** ({'PASS' if monitoring_ok else 'FAIL'})", ""])
+    if market_only:
+        lines.extend(["", "- Scope: market data and Automated F1 series only; manual monitoring snapshot excluded.", ""])
+    else:
+        lines.extend(["", f"- B-Monitoring last updated: **{fmt(monitoring_date)}** ({'PASS' if monitoring_ok else 'FAIL'})", ""])
     report = "\n".join(lines)
     report_path.write_text(report)
     if summary_path := os.getenv("GITHUB_STEP_SUMMARY"):
@@ -130,12 +134,12 @@ def main(argv=None):
     deadline = time.monotonic() + max(0, args.wait_seconds)
     while True:
         automated_dates = automated_latest_dates(automated_workbook, tickers)
-        monitoring_date = parse_sheet_date(automated_workbook.worksheet("B-Monitoring").acell("C6").value)
+        monitoring_date = None if args.market_only else parse_sheet_date(automated_workbook.worksheet("B-Monitoring").acell("C6").value)
         rows, monitoring_ok = status_rows(market_dates, automated_dates, monitoring_date, expected)
-        passed = all(row["status"] == "PASS" for row in rows) and monitoring_ok
+        passed = all(row["status"] == "PASS" for row in rows) and (args.market_only or monitoring_ok)
         if passed or time.monotonic() >= deadline:
             message = "PASS" if passed else "FAIL: one or more workbooks are stale"
-            write_report(rows, monitoring_date, monitoring_ok, expected, message)
+            write_report(rows, monitoring_date, monitoring_ok, expected, message, market_only=args.market_only)
             return 0 if passed else 1
         print("Automated F1 is still recalculating; checking again...")
         time.sleep(max(1, args.poll_seconds))

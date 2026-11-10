@@ -12,6 +12,8 @@ on:
     # Primary: 03:07 Asia/Bangkok, Monday-Saturday. This compensates for
     # observed GitHub scheduling delays while avoiding the top of the hour.
     - cron: '7 20 * * 0-5'
+    # Additional recovery opportunity: 05:17 Asia/Bangkok, Monday-Saturday.
+    - cron: '17 22 * * 0-5'
     # Fallback: 06:45 Asia/Bangkok, Monday-Saturday. This leaves a 75-minute
     # buffer before the TFEX 08:00 open effective 2026-11-16.
     - cron: '45 23 * * 0-5'
@@ -80,3 +82,16 @@ jobs:
         } >> "$GITHUB_STEP_SUMMARY"
 
         exit "$updater_exit"
+
+    - name: Verify current market data in System F1
+      if: inputs.dry_run != true
+      run: python scripts/check_gsheets_dates.py --market-only --wait-seconds 180 --poll-seconds 30
+
+    - name: Upload market freshness report
+      if: always()
+      uses: actions/upload-artifact@v5
+      with:
+        name: f1-th-market-freshness-report
+        path: mismatch_report.md
+        if-no-files-found: ignore
+        retention-days: 30

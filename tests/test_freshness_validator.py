@@ -2,11 +2,26 @@ import tempfile
 import unittest
 from datetime import date
 from pathlib import Path
+from unittest.mock import Mock, patch
 
 from scripts import check_gsheets_dates as validator
 
 
 class FreshnessValidatorTests(unittest.TestCase):
+    def test_market_only_skips_manual_monitoring_but_rejects_stale_series(self):
+        expected = date(2026, 11, 9)
+        for market_date, automated_date, exit_code in (
+            (expected, expected, 0),
+            (date(2026, 11, 6), expected, 1),
+            (expected, date(2026, 11, 6), 1),
+        ):
+            with self.subTest(market=market_date, automated=automated_date):
+                client = Mock()
+                client.open_by_url.return_value.worksheet.side_effect = AssertionError("manual monitoring must not be read")
+                with patch.object(validator, "auth_client", return_value=client), patch.object(validator, "get_tickers", return_value=["S50"]), patch.object(validator, "market_latest_dates", return_value={"S50": market_date}), patch.object(validator, "automated_latest_dates", return_value={"S50": automated_date}), patch.object(validator, "write_report") as report:
+                    self.assertEqual(validator.main(["--market-only", "--expected-date", "2026-11-09"]), exit_code)
+                    self.assertTrue(report.call_args.kwargs["market_only"])
+
     def test_contract_symbols_map_to_market_tabs(self):
         self.assertEqual(validator.ticker_from_symbol("S50Z26"), "S50")
         self.assertEqual(validator.ticker_from_symbol("USDJPYU26"), "USDJPY")
