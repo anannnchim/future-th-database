@@ -21,6 +21,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from webdriver_manager.chrome import ChromeDriverManager
+from scripts.trading_calendar import expected_trading_date
 
 SCOPES = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
 MARKET_INPUT_URL = "https://docs.google.com/spreadsheets/d/17SMA52gIOkjFan-0au_YJEAxoWIzoNA84qlmgoTsZ-s/edit?gid=1037340594#gid=1037340594"
@@ -162,7 +163,7 @@ def write_and_verify(worksheet, frame, expected_latest_date, allow_legacy_blank_
         )
 
 
-def update_symbol(market_data_sheet, symbol, dry_run=False):
+def update_symbol(market_data_sheet, symbol, dry_run=False, expected_date=None):
     ticker = symbol[:-3]
     worksheet = market_data_sheet.worksheet(ticker)
     previous = load_existing(worksheet)
@@ -179,6 +180,11 @@ def update_symbol(market_data_sheet, symbol, dry_run=False):
     if scraped["symbol"].isna().any() or scraped["symbol"].astype(str).str.strip().eq("").any():
         raise ValueError(f"{symbol}: TFEX returned blank contract symbols")
     stored_latest, scraped_latest = previous["date"].max(), scraped["date"].max()
+    if expected_date is not None and max(stored_latest, scraped_latest).date() < expected_date:
+        raise RuntimeError(
+            f"{symbol}: data is stale; expected {expected_date.isoformat()}, "
+            f"stored={stored_latest:%Y-%m-%d}, source={scraped_latest:%Y-%m-%d}"
+        )
     prior_symbols = previous["symbol"].astype("string").str.strip()
     prior_symbols = prior_symbols[prior_symbols.notna() & prior_symbols.ne("")]
     if prior_symbols.empty:
@@ -234,6 +240,8 @@ def parse_args(argv=None):
 
 def main(argv=None):
     args = parse_args(argv)
+    expected = expected_trading_date()
+    print(f"Expected completed trading date: {expected.isoformat()}")
     client = authenticated_client()
     holding = pd.DataFrame(client.open_by_url(MARKET_INPUT_URL).worksheet("holding_information").get_all_records())
     if holding.empty or "current_symbol" not in holding:
@@ -242,7 +250,7 @@ def main(argv=None):
     failures = []
     for symbol in holding["current_symbol"].dropna().astype(str):
         try:
-            update_symbol(data_sheet, symbol.strip(), dry_run=args.dry_run)
+            update_symbol(data_sheet, symbol.strip(), dry_run=args.dry_run, expected_date=expected)
         except Exception as exc:
             failures.append(f"{symbol}: {exc}")
             print(f"ERROR: {failures[-1]}")

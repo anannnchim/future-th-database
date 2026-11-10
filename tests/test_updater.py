@@ -3,6 +3,8 @@
 import importlib.util
 from pathlib import Path
 import unittest
+from datetime import date
+from unittest.mock import patch
 
 import pandas as pd
 
@@ -39,6 +41,25 @@ class FakeDataSheet:
 
 
 class UpdaterTests(unittest.TestCase):
+    def test_stale_source_and_database_fail_before_any_write(self):
+        previous = series([
+            [pd.Timestamp("2026-11-06"), 1, 1, 1, 1, 100, 1, 1, "EURUSDZ26", 100],
+        ])
+        with patch.object(updater, "scrape_prepared", return_value=previous.drop(columns=["adj_price"])), patch.object(updater, "write_and_verify") as write:
+            with self.assertRaisesRegex(RuntimeError, "data is stale; expected 2026-11-09"):
+                updater.update_symbol(FakeDataSheet(FakeWorksheet(previous)), "EURUSDZ26", expected_date=date(2026, 11, 9))
+            write.assert_not_called()
+
+    def test_current_source_can_catch_up_stale_database(self):
+        previous = series([
+            [pd.Timestamp("2026-11-06"), 1, 1, 1, 1, 100, 1, 1, "EURUSDZ26", 100],
+        ])
+        scraped = previous.drop(columns=["adj_price"]).copy()
+        scraped.loc[len(scraped)] = [pd.Timestamp("2026-11-09"), 1, 1, 1, 1, 101, 1, 1, "EURUSDZ26"]
+        with patch.object(updater, "scrape_prepared", return_value=scraped), patch.object(updater, "write_and_verify") as write:
+            updater.update_symbol(FakeDataSheet(FakeWorksheet(previous)), "EURUSDZ26", expected_date=date(2026, 11, 9))
+            self.assertEqual(write.call_args.args[1]["date"].max(), pd.Timestamp("2026-11-09"))
+
     def test_prep_df_drops_unusable_rows_and_sorts_dates(self):
         raw = pd.DataFrame([
             ["02 Jan 2026", "1,200", "-", "-", "-", "1,201", "", "", "10", "20", "EURU26"],

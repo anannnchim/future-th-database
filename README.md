@@ -6,13 +6,27 @@ This repository updates the Google Sheets market database used by System F1-TH.
 
 The `Update F1-TH market data` workflow:
 
-- runs at 03:07 Asia/Bangkok, Monday through Saturday, with a 06:45 fallback;
+- runs at 03:07 Asia/Bangkok, Monday through Saturday, with 05:17 and 06:45 recovery runs;
 - can also be started manually with `workflow_dispatch`;
 - reads the current contracts from the `holding_information` worksheet;
 - scrapes TFEX historical trading data;
 - refreshes current-contract rows and appends every missing date;
 - preserves continuous-series back-adjustment when a contract rolls;
 - reads each worksheet back after writing and fails if verification does not match.
+
+Every run checks the latest completed trading date using the Thai trading
+calendar. If both TFEX and the stored series are stale, that instrument fails
+before writing. After a live update, the workflow checks all active market-data
+and Automated F1 dates, allowing up to three minutes for formula recalculation.
+This market-data check excludes the manually refreshed `B-Monitoring` snapshot;
+the separate end-to-end validation workflow still checks it.
+
+GitHub scheduled events can arrive hours late. A daily Codex recovery check at
+06:30 Asia/Bangkok, Monday through Saturday, independently checks the dates and
+dispatches the production update if they are stale. It verifies completion and
+reports recovery or a failure requiring attention. This local recovery check
+depends on Codex and its connected computer being available; it does not make
+GitHub cron a guaranteed scheduler.
 
 The workflow is defined in `.github/workflows/update-market-data.yml` and runs
 `manual-system-f1-th-ver2.py`.
@@ -100,6 +114,7 @@ From 16 November 2026, TFEX opens at 08:00. The scheduled workflow order is:
 | Time | Workflow | Purpose |
 | --- | --- | --- |
 | 03:07 | Update F1-TH market data | Primary prior-session data refresh. |
+| 05:17 | Update F1-TH market data | Additional recovery opportunity. |
 | 05:45 | Stage F1-TH execution confirmations | First check after the expected broker email. |
 | 06:30 | Stage F1-TH execution confirmations | Second confirmation check. |
 | 06:45 | Update F1-TH market data | Fallback data refresh. |
