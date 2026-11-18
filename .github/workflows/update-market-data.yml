@@ -9,10 +9,8 @@ on:
         default: false
         type: boolean
   schedule:
-    # Primary: 03:07 Asia/Bangkok, Monday-Saturday. This compensates for
-    # observed GitHub scheduling delays while avoiding the top of the hour.
-    - cron: '7 20 * * 0-5'
-    # Additional recovery opportunity: 05:17 Asia/Bangkok, Monday-Saturday.
+    # Recovery opportunity: 05:17 Asia/Bangkok, Monday-Saturday. The primary
+    # 03:07 update runs as a Google Cloud Run Job triggered by Cloud Scheduler.
     - cron: '17 22 * * 0-5'
     # Fallback: 06:45 Asia/Bangkok, Monday-Saturday. This leaves a 75-minute
     # buffer before the TFEX 08:00 open effective 2026-11-16.

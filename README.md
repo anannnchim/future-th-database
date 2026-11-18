@@ -4,10 +4,10 @@ This repository updates the Google Sheets market database used by System F1-TH.
 
 ## Automated update
 
-The `Update F1-TH market data` workflow:
+The market-data updater:
 
-- runs at 03:07 Asia/Bangkok, Monday through Saturday, with 05:17 and 06:45 recovery runs;
-- can also be started manually with `workflow_dispatch`;
+- runs as a Cloud Run Job at 03:07 Asia/Bangkok, Monday through Saturday;
+- keeps GitHub Actions recovery runs at 05:17 and 06:45 and manual `workflow_dispatch`;
 - reads the current contracts from the `holding_information` worksheet;
 - scrapes TFEX historical trading data;
 - refreshes current-contract rows and appends every missing date;
@@ -159,11 +159,11 @@ From 16 November 2026, TFEX opens at 08:00. The scheduled workflow order is:
 
 | Time | Workflow | Purpose |
 | --- | --- | --- |
-| 03:07 | Update F1-TH market data | Primary prior-session data refresh. |
-| 05:17 | Update F1-TH market data | Additional recovery opportunity. |
+| 03:07 | Cloud Run: F1-TH market data | Primary prior-session data refresh. |
+| 05:17 | GitHub Actions: F1-TH market data | Additional recovery opportunity. |
 | 05:45 | Stage F1-TH execution confirmations | First check after the expected broker email. |
 | 06:30 | Stage F1-TH execution confirmations | Second confirmation check. |
-| 06:45 | Update F1-TH market data | Fallback data refresh. |
+| 06:45 | GitHub Actions: F1-TH market data | Fallback data refresh. |
 | 07:20 | Validate F1-TH freshness | End-to-end data freshness validation. |
 | 08:00 | TFEX | Market open; no scheduled maintenance should be pending. |
 
