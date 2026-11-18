@@ -8,6 +8,15 @@ from scripts import check_gsheets_dates as validator
 
 
 class FreshnessValidatorTests(unittest.TestCase):
+    def test_auth_uses_application_default_credentials_without_key_file(self):
+        credentials = Mock()
+        with patch.dict(validator.os.environ, {}, clear=True), patch.object(
+            validator.google.auth, "default", return_value=(credentials, "project")
+        ) as default, patch.object(validator.gspread, "authorize", return_value="client") as authorize:
+            self.assertEqual(validator.auth_client(), "client")
+        default.assert_called_once_with(scopes=validator.SCOPES)
+        authorize.assert_called_once_with(credentials)
+
     def test_market_only_skips_manual_monitoring_but_rejects_stale_series(self):
         expected = date(2026, 11, 9)
         for market_date, automated_date, exit_code in (

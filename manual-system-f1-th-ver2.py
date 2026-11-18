@@ -11,6 +11,7 @@ import sys
 import time
 
 import gspread
+import google.auth
 import pandas as pd
 from google.oauth2 import service_account
 from gspread_dataframe import set_with_dataframe
@@ -37,7 +38,12 @@ def scrape_from_tfex(symbol):
     options = webdriver.ChromeOptions()
     for argument in ("--headless", "--no-sandbox", "--disable-dev-shm-usage"):
         options.add_argument(argument)
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+    chrome_binary = os.getenv("CHROME_BINARY")
+    if chrome_binary:
+        options.binary_location = chrome_binary
+    chromedriver_path = os.getenv("CHROMEDRIVER_PATH")
+    service = Service(chromedriver_path or ChromeDriverManager().install())
+    driver = webdriver.Chrome(service=service, options=options)
     try:
         driver.get(url)
         table = WebDriverWait(driver, 60).until(EC.visibility_of_element_located((By.XPATH, xpath)))
@@ -98,9 +104,10 @@ def scrape_prepared(symbol, attempts=3):
 
 def authenticated_client():
     key_file = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
-    if not key_file:
-        raise RuntimeError("GOOGLE_APPLICATION_CREDENTIALS is not set")
-    credentials = service_account.Credentials.from_service_account_file(key_file, scopes=SCOPES)
+    if key_file:
+        credentials = service_account.Credentials.from_service_account_file(key_file, scopes=SCOPES)
+    else:
+        credentials, _ = google.auth.default(scopes=SCOPES)
     return gspread.authorize(credentials)
 
 
