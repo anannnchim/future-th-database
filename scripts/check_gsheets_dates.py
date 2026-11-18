@@ -12,6 +12,7 @@ from datetime import date, datetime
 from pathlib import Path
 
 import gspread
+import google.auth
 import pandas as pd
 from google.oauth2 import service_account
 
@@ -40,9 +41,10 @@ def parse_args(argv=None):
 
 def auth_client():
     credentials_file = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
-    if not credentials_file:
-        raise RuntimeError("GOOGLE_APPLICATION_CREDENTIALS is not set")
-    credentials = service_account.Credentials.from_service_account_file(credentials_file, scopes=SCOPES)
+    if credentials_file:
+        credentials = service_account.Credentials.from_service_account_file(credentials_file, scopes=SCOPES)
+    else:
+        credentials, _ = google.auth.default(scopes=SCOPES)
     return gspread.authorize(credentials)
 
 

@@ -31,6 +31,52 @@ GitHub cron a guaranteed scheduler.
 The workflow is defined in `.github/workflows/update-market-data.yml` and runs
 `manual-system-f1-th-ver2.py`.
 
+## Cloud Run market-data job
+
+The updater and market-only freshness validator can also run as a Cloud Run
+Job. The container uses the job's attached Google Cloud service account through
+Application Default Credentials, so it does not need a downloaded service
+account key. The same credential-file behavior remains available for the
+existing GitHub Actions workflows.
+
+The container defaults to `DRY_RUN=true`. A production job must explicitly set
+`DRY_RUN=false`; after a live update, the container runs the same market-only
+freshness validation used by GitHub Actions. The runtime service account needs
+Viewer access to the market-input and Automated F1 workbooks and Editor access
+to the market-data workbook.
+
+Build and deploy the dry-run job from the repository root:
+
+```bash
+gcloud builds submit \
+  --tag asia-southeast1-docker.pkg.dev/automated-system-f1-th/f1/market-update:latest
+
+gcloud run jobs deploy f1-market-update \
+  --image asia-southeast1-docker.pkg.dev/automated-system-f1-th/f1/market-update:latest \
+  --region asia-southeast1 \
+  --service-account f1-market-runtime@automated-system-f1-th.iam.gserviceaccount.com \
+  --set-env-vars DRY_RUN=true \
+  --task-timeout 20m \
+  --max-retries 0
+
+gcloud run jobs execute f1-market-update --region asia-southeast1 --wait
+```
+
+Only after the dry run passes should the job be changed to live mode and run
+once manually with full date verification:
+
+```bash
+gcloud run jobs update f1-market-update \
+  --region asia-southeast1 \
+  --set-env-vars DRY_RUN=false
+
+gcloud run jobs execute f1-market-update --region asia-southeast1 --wait
+```
+
+Cloud Scheduler can call the Cloud Run v2 `jobs/f1-market-update:run` endpoint
+at `7 3 * * 1-6` using the `Asia/Bangkok` time zone. Keep the GitHub recovery
+runs enabled during the initial observation period.
+
 ## Safe local checks
 
 Install the pinned production dependencies and run the offline regression suite:

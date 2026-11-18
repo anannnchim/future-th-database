@@ -4,7 +4,7 @@ import importlib.util
 from pathlib import Path
 import unittest
 from datetime import date
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import pandas as pd
 
@@ -41,6 +41,15 @@ class FakeDataSheet:
 
 
 class UpdaterTests(unittest.TestCase):
+    def test_auth_uses_application_default_credentials_without_key_file(self):
+        credentials = Mock()
+        with patch.dict(updater.os.environ, {}, clear=True), patch.object(
+            updater.google.auth, "default", return_value=(credentials, "project")
+        ) as default, patch.object(updater.gspread, "authorize", return_value="client") as authorize:
+            self.assertEqual(updater.authenticated_client(), "client")
+        default.assert_called_once_with(scopes=updater.SCOPES)
+        authorize.assert_called_once_with(credentials)
+
     def test_stale_source_and_database_fail_before_any_write(self):
         previous = series([
             [pd.Timestamp("2026-11-06"), 1, 1, 1, 1, 100, 1, 1, "EURUSDZ26", 100],
